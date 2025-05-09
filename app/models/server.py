@@ -1,0 +1,70 @@
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+from app.core.variables import SettingFieldDB
+
+if TYPE_CHECKING:
+    from app.models.subscription import Subscription
+
+
+class Region(Base):
+    """Модель для регионов."""
+
+    code: Mapped[str] = mapped_column(
+        String(SettingFieldDB.MAX_LENGTH_CODE_REGION),
+        unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(
+        String(SettingFieldDB.MAX_LENGTH_NAME),
+        unique=True, nullable=False)
+
+    servers: Mapped[list['Server']] = relationship(
+        'Server', back_populates='region')
+
+    subscriptions: Mapped[list['Subscription']] = relationship(
+        'Subscription', back_populates='region')
+
+
+class Server(Base):
+    """Модель для серверов."""
+
+    ip_address: Mapped[str] = mapped_column(
+        String(SettingFieldDB.MAX_LENGTH_IP), nullable=False, unique=True)
+    protocol: Mapped[str] = mapped_column(
+        String(SettingFieldDB.MAX_LENGTH_PROTOCOL), nullable=False)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=SettingFieldDB.DEFAULT_ACTIVE_SRV, nullable=False)
+    max_certificates: Mapped[int] = mapped_column(
+        Integer, default=SettingFieldDB.DEFAULT_MAX_CERT, nullable=False)
+    current_cert_count: Mapped[int] = mapped_column(
+        Integer, default=SettingFieldDB.DEFAULT_FOR_COUNT, nullable=False)
+
+    region_id: Mapped[int] = mapped_column(
+        ForeignKey('region.id'), nullable=True)
+    region: Mapped['Region'] = relationship(
+        'Region', remote_side='Region.id', back_populates='servers')
+
+    certificates: Mapped[list['Certificate']] = relationship(
+        'Certificate', back_populates='server')
+
+
+class Certificate(Base):
+    """Модель для сертификатов."""
+
+    filename: Mapped[str] = mapped_column(
+        String(SettingFieldDB.MAX_LENGTH_FILENAME),
+        nullable=False, unique=True)
+
+    server_id: Mapped[int] = mapped_column(
+        ForeignKey('region.id'), nullable=True)
+    server: Mapped['Server'] = relationship(
+        'Server', remote_side='Server.id',
+        back_populates='certificates')
+
+    subscription_id: Mapped[int] = mapped_column(
+        ForeignKey('region.id'), nullable=True)
+    subscription: Mapped['Subscription'] = relationship(
+        'Subscription', remote_side='Subscription.id',
+        back_populates='certificates')

@@ -1,0 +1,13 @@
+volumes:
+  tg_data:
+
+services:
+  database:
+    image: postgres:17-alpine
+    container_name: tgdb_container
+    env_file: .env
+    volumes:
+      - tg_data:/var/lib/postgresql/tgdata
+    ports:
+      - "2709:${DB_PORT}"
+    restart: unless-stopped
