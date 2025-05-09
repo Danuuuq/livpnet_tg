@@ -58,13 +58,13 @@ class Certificate(Base):
         nullable=False, unique=True)
 
     server_id: Mapped[int] = mapped_column(
-        ForeignKey('region.id'), nullable=True)
+        ForeignKey('server.id'), nullable=True)
     server: Mapped['Server'] = relationship(
         'Server', remote_side='Server.id',
         back_populates='certificates')
 
     subscription_id: Mapped[int] = mapped_column(
-        ForeignKey('region.id'), nullable=True)
+        ForeignKey('subscription.id'), nullable=True)
     subscription: Mapped['Subscription'] = relationship(
         'Subscription', remote_side='Subscription.id',
         back_populates='certificates')

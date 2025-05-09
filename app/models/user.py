@@ -29,4 +29,4 @@ class User(Base):
         'User', back_populates='refer_from')
 
     subscription: Mapped[list['Subscription']] = relationship(
-        'Subscription', back_populates='user')
+        'Subscription', back_populates='user', lazy='joined')

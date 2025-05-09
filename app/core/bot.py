@@ -12,6 +12,5 @@ bot = Bot(token=settings.TOKEN_TG, default=DefaultBotProperties(
 
 async def set_commands():
     """Добавление команд для взаимодействия с ботом"""
-    commands = [BotCommand(command='start', description='Перезапуск'),
-                BotCommand(command='main', description='Главное меню')]
+    commands = [BotCommand(command='start', description='Главное меню')]
     await bot.set_my_commands(commands, BotCommandScopeDefault())
