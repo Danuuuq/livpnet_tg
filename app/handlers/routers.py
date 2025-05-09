@@ -1,6 +1,6 @@
 from aiogram import Router
 
-from .start_handler import router as start_router
+from app.handlers.common import start_router, subscription_router
 
 main_router = Router()
-main_router.include_router(start_router)
+main_router.include_routers(start_router, subscription_router)

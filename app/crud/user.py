@@ -6,7 +6,7 @@ from app.models.user import User
 
 
 class CRUDUser(CRUDBase):
-    """CRUD операции для модели с  пользователями."""
+    """CRUD операции для модели с пользователями."""
 
     async def get_by_tg_id(self, tg_id: int,
                            session: AsyncSession) -> User | None:

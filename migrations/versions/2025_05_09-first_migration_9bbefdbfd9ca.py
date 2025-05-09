@@ -33,7 +33,6 @@ def upgrade() -> None:
     )
     op.create_table('user',
     sa.Column('telegram_id', sa.BigInteger(), nullable=False),
-    sa.Column('name', sa.String(length=64), nullable=False),
     sa.Column('ref_count', sa.Integer(), nullable=False),
     sa.Column('refer_from_id', sa.BigInteger(), nullable=True),
     sa.Column('id', sa.BigInteger(), nullable=False),

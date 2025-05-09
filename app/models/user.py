@@ -15,8 +15,6 @@ class User(Base):
 
     telegram_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, unique=True)
-    name: Mapped[str] = mapped_column(
-        String(SettingFieldDB.MAX_LENGTH_NAME), nullable=False)
     ref_count: Mapped[int] = mapped_column(
         Integer, default=SettingFieldDB.DEFAULT_FOR_COUNT, nullable=False)
 
