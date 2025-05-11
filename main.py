@@ -1,14 +1,12 @@
 import asyncio
 
 from app.core.bot import bot
-from app.core.fsm_storage import dp
-from app.handlers.routers import main_router
+from app.core.dispatcher import dp
 
 
 async def main():
     """Запуск приложения с ботом."""
 
-    dp.include_router(main_router)
     try:
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(

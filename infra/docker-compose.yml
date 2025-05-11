@@ -9,5 +9,5 @@ services:
     volumes:
       - tg_data:/var/lib/postgresql/tgdata
     ports:
-      - "2709:${DB_PORT}"
+      - "${DB_PORT}:5432"
     restart: unless-stopped
