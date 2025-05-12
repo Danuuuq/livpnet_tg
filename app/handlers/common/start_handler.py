@@ -6,19 +6,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.keyboards.inline import main_inline_kb
 from app.messages.common import CommonMessage
-from app.services.users import user_service
+from app.models.user import User
+from app.services.user import user_service
 
 router = Router()
 
 
 @router.message(CommandStart())
 async def cmd_start(
-    message: Message, state: FSMContext,
+    message: Message, state: FSMContext, current_user: User,
     command: CommandObject, db_session: AsyncSession):
     """Команда для запуска бота и возврата в меню."""
     # Чистка состояния, если оно было вдруг
     await state.clear()
-    await user_service.welcome_user(message, command, db_session)
+    await user_service.welcome_user(message, current_user, command, db_session)
 
 
 @router.callback_query(F.data == '/start')

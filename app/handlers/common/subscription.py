@@ -1,22 +1,39 @@
 from aiogram import Router, F
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
+from aiogram.utils.chat_action import ChatActionSender
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.crud.user import user_crud
-from app.crud.subscription import subscription_crud
+from app.core.bot import bot
+from app.crud.server import server_crud
+from app.forms.subscription import TrialSubForm
+from app.keyboards.keyboard import chose_location_server_kb
 from app.messages.common import CommonMessage
-from app.keyboards.inline import subscription_inline_kb
+from app.models.user import User
+from app.services.subscription import subscription_service
 
 router = Router()
 
 
 @router.callback_query(F.data == 'get_subscription')
-async def get_subscription_user(call: CallbackQuery, db_session: AsyncSession):
+async def get_subscription_user(call: CallbackQuery, db_session: AsyncSession,
+                                current_user: User):
     """CallBack запрос для получения подписки пользователя."""
     await call.answer('Загружаю информацию о подписке', show_alert=False)
-    user = await user_crud.get_by_tg_id(call.from_user.id, db_session)
-    subscription = await subscription_crud.get_by_user(user.id, db_session)
-    if not subscription:
-        await call.message.delete()
-        await call.message.answer(CommonMessage.SUBSCRIPTION_WELCOME,
-                                  reply_markup=subscription_inline_kb('trial'))
+    await subscription_service.get_sub_user(current_user, call, db_session)
+
+
+@router.callback_query(F.data == 'get_trial')
+async def get_trial(call: CallbackQuery, db_session: AsyncSession,
+                    current_user: User, state: FSMContext):
+    """CallBack запрос для получения пробной подписки."""
+    await state.clear()
+    await call.answer('Начинаем оформление подписки', show_alert=False)
+    async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
+        servers = await server_crud.get_active_servers(db_session)
+        # locations = [location.region.name for location in servers]
+        await call.message.answer(
+            'Выбери локацию для подключения',
+            reply_markup=chose_location_server_kb(servers))
+    await state.set_state(TrialSubForm.location)
+    # await subscription_service.create_trial_sub(current_user, call, db_session)
