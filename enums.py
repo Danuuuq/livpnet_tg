@@ -11,5 +11,6 @@ class Errors(str, BaseEnum):
     BASE_ERROR = 'Произошла ошибка: {e}'
 
 
-class Message(str, BaseEnum):
+class Messages(str, BaseEnum):
     NOT_SUB = 'У вас нет активной подписки.'
+    TEST = 'Тут будет сертификат, а пока тестируем ответ.'

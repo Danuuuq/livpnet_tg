@@ -1,4 +1,4 @@
-from models import Subscription
+from app.models import Subscription
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime

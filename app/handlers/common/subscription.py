@@ -11,6 +11,7 @@ from app.keyboards.keyboard import chose_location_server_kb
 from app.messages.common import CommonMessage
 from app.models.user import User
 from app.services.subscription import subscription_service
+from app.utils.exceptions import SubscriptionNotFoundError
 
 router = Router()
 

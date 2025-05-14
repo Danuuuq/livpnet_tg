@@ -11,12 +11,12 @@ def build_cert_name(
     user_id: int,
     sub_id: int
 ) -> str:
-    f"user_{user_id}_sub_{sub_id}_{int(datetime.now().timestamp())}_{uuid4().hex[:4]}"
+    return f"user_{user_id}_sub_{sub_id}_{int(datetime.now().timestamp())}_{uuid4().hex[:4]}"
+
 
 async def generate_certificate(cert_name: str) -> Path:
     CERT_STORAGE.mkdir(parents=True, exist_ok=True)
 
-    # Строим команду
     cmd = [
         "docker", "exec", "openvpn_container",
         "easyrsa", "build-client-full", cert_name, "nopass"
