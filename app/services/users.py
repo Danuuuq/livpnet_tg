@@ -15,8 +15,11 @@ class UserService:
         self.crud = crud
 
     async def welcome_user(
-        self, message: Message,
-        command: CommandObject, session: AsyncSession):
+        self,
+        message: Message,
+        command: CommandObject,
+        session: AsyncSession
+    ):
         user = await self.crud.get_by_tg_id(message.from_user.id, session)
         if user:
             await message.answer(

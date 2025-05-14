@@ -1,5 +1,9 @@
 volumes:
   tg_data:
+  openvpn_data:
+
+networks:
+  tg_net:
 
 services:
   database:
@@ -10,4 +14,19 @@ services:
       - tg_data:/var/lib/postgresql/tgdata
     ports:
       - "${DB_PORT}:5432"
+    networks:
+      - tg_net
+    restart: unless-stopped
+
+  openvpn:
+    image: kylemanna/openvpn
+    container_name: openvpn_container
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - openvpn_data:/etc/openvpn
+    ports:
+      - "1194:1194/udp"
+    networks:
+      - tg_net
     restart: unless-stopped
