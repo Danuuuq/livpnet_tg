@@ -5,19 +5,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.user import user_crud
 from app.keyboards.inline import main_inline_kb
 from app.messages.common import CommonMessage
+from app.models.user import User
 from app.utils.utils import get_refer_id
 
 
 class UserService:
     """Класс сервиса для работы с Юзерами."""
 
-    def __init__(self, crud):
-        self.crud = crud
+    crud = user_crud
 
     async def welcome_user(
         self,
         message: Message,
         command: CommandObject,
+        user: User,
         session: AsyncSession
     ):
         user = await self.crud.get_by_tg_id(message.from_user.id, session)
@@ -44,9 +45,9 @@ class UserService:
         refer_id = get_refer_id(ref_id)
         refer_from = await self.crud.get_by_tg_id(refer_id, session)
         if refer_from:
-            refer_from = refer_from.id
+            return refer_from.id
         else:
-            refer_from = None
+            return None
 
 
-user_service = UserService(user_crud)
+user_service = UserService()
