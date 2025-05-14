@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
 try:
     settings = Settings()
+    print(settings.get_db_url)
 except ValidationError as error:
     missing_vars = [err["loc"][0] for err in error.errors()]
     raise EnvironmentError(
