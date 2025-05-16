@@ -1,7 +1,11 @@
+from typing import Sequence
+
 from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
+
+from app.models.server import Server
 
 
 def main_inline_kb() -> InlineKeyboardMarkup:
@@ -27,6 +31,17 @@ def subscription_inline_kb(status: str | None = None) -> InlineKeyboardMarkup:
     if status == 'trial':
         inline_kb_list.append(
             [InlineKeyboardButton(text='🆓 Пробная подписка', callback_data='get_trial')])
+    inline_kb_list.append(
+        [InlineKeyboardButton(text='🔙 Вернуться в меню', callback_data='/start')])
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+
+def chose_location_server_kb(servers: Sequence[Server]) -> InlineKeyboardMarkup:
+    """Инлайн клавиатура с выбором региона сервера."""
+    inline_kb_list = [
+        [InlineKeyboardButton(text=f'{server.region.name}',
+                              callback_data=f'{server.region.code}')] for server in servers
+    ]
     inline_kb_list.append(
         [InlineKeyboardButton(text='🔙 Вернуться в меню', callback_data='/start')])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)

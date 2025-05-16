@@ -5,7 +5,6 @@ class TrialSubForm(StatesGroup):
     """Класс формы для пробной подписки."""
 
     location = State()
-    available_locations = State()
 
 
 class SubscriptionForm(TrialSubForm):
