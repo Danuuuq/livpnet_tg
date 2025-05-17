@@ -1,12 +1,20 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
-class TrialSubForm(StatesGroup):
-    """Класс формы для пробной подписки."""
+class SubscriptionForm(StatesGroup):
+    """Класс формы для оформления подписки."""
 
+    servers = State()
+    type = State()
     location = State()
-
-
-class SubscriptionForm(TrialSubForm):
+    protocol = State()
     count_device = State()
     duration = State()
+    extension = State()
+
+
+class SupportForm(StatesGroup):
+    """Класс формы для пробной подписки."""
+
+    device = State()
+    protocol = State()
