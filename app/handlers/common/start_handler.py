@@ -5,21 +5,28 @@ from aiogram.types import CallbackQuery, Message
 
 from app.keyboards.inline import main_inline_kb
 from app.messages.common import CommonMessage
-from app.models.user import User
 
 router = Router()
 
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext,
-                    current_user: User, command: CommandObject):
-    """Команда для запуска бота и возврата в меню."""
+                    current_user: dict, command: CommandObject):
+    """Команда для запуска бота."""
     await state.clear()
     if current_user:
-        await message.answer(
-            CommonMessage.HELLO_FOR_CLIENT.format(
-                name=message.from_user.first_name),
-            reply_markup=main_inline_kb())
+        subscription = current_user.get('subscription')
+        if subscription:
+            await message.answer(
+                CommonMessage.HELLO_FOR_CLIENT.format(
+                    name=message.from_user.first_name,
+                    end_data=subscription.get('end_date')),
+                reply_markup=main_inline_kb())
+        else:
+            await message.answer(
+                CommonMessage.HELLO_WITHOUT_SUB.format(
+                    name=message.from_user.first_name),
+                reply_markup=main_inline_kb())
     else:
         # TODO: Передаем бэкенду информацию о клиенте
         # TODO: и аргументы команды для рефералки
@@ -31,11 +38,21 @@ async def cmd_start(message: Message, state: FSMContext,
 
 
 @router.callback_query(F.data == 'main_menu')
-async def callback_start(call: CallbackQuery, state: FSMContext):
+async def callback_start(call: CallbackQuery, state: FSMContext,
+                         current_user: dict):
     """Возвращение в главное меню."""
     await state.clear()
-    await call.message.delete()
-    await call.message.answer(
-        CommonMessage.HELLO_FOR_CLIENT.format(
-            name=call.from_user.first_name),
-        reply_markup=main_inline_kb())
+    subscription = current_user.get('subscription')
+    if subscription:
+        await call.message.delete()
+        await call.message.answer(
+            CommonMessage.HELLO_FOR_CLIENT.format(
+                name=call.from_user.first_name,
+                end_data=subscription.get('end_date')),
+            reply_markup=main_inline_kb())
+    else:
+        await call.message.delete()
+        await call.message.answer(
+            CommonMessage.HELLO_WITHOUT_SUB.format(
+                name=call.from_user.first_name),
+            reply_markup=main_inline_kb())

@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery
 from aiogram.utils.chat_action import ChatActionSender
 
 from app.core.bot import bot
@@ -20,41 +20,21 @@ from .examples_data import servers, subscription_1
 router = Router()
 
 
-@router.callback_query(F.data == 'get_subscription')
-async def get_subscription_user(call: CallbackQuery, current_user: dict):
-    """CallBack запрос для получения подписки пользователя."""
-    await call.answer('Загружаю информацию о подписке', show_alert=False)
-    # TODO: Подписка будет в current_user
-    if current_user.get('subscription'):
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.SUBSCRIPTION_INFO.format(**subscription_1),
-            reply_markup=subscription_inline_kb())
-    else:
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.SUBSCRIPTION_WELCOME,
-            reply_markup=subscription_inline_kb(trial=True))
-
-
-@router.callback_query(F.data == 'get_certificate')
-async def get_certificate(call: CallbackQuery, current_user: dict):
-    """CallBack запрос для получения ключей или сертификатов."""
-    assert call.message is not None
-    assert isinstance(call.message, Message)
-    await call.answer('Начинаю загрузку ключей', show_alert=False)
-    if current_user.get('subscription'):
-        async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-            # TODO: Обращение к бэкенду за QR кодом или ovpn файлами
-            await call.message.delete()
-            await call.message.answer(
-                'Скачивай, настраивай и подключайся:',
-                reply_markup=keys_inline_kb(True))
-    else:
-        await call.message.delete()
-        await call.message.answer(
-                'У тебя пока что нет активных подписок:',
-                reply_markup=keys_inline_kb(False))
+# @router.callback_query(F.data == 'get_subscription')
+# async def get_subscription_user(call: CallbackQuery, current_user: dict):
+#     """CallBack запрос для получения подписки пользователя."""
+#     await call.answer('Загружаю информацию о подписке', show_alert=False)
+#     # TODO: Подписка будет в current_user
+#     if current_user.get('subscription'):
+#         await call.message.delete()
+#         await call.message.answer(
+#             CommonMessage.SUBSCRIPTION_INFO.format(**subscription_1),
+#             reply_markup=subscription_inline_kb())
+#     else:
+#         await call.message.delete()
+#         await call.message.answer(
+#             CommonMessage.SUBSCRIPTION_WELCOME,
+#             reply_markup=subscription_inline_kb(trial=True))
 
 
 @router.callback_query(F.data == 'pay_subscription')

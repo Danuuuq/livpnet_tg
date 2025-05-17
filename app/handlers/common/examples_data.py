@@ -1,7 +1,7 @@
 servers = [
     {'ip_add': '0.0.0.0',
      'protocol': 'OpenVPN',
-     'is_active': 'True',
+     'is_active': True,
      'max_cert': 10,
      'count_cert': 2,
      'region': {'id': 0,
@@ -9,7 +9,7 @@ servers = [
                 'name': 'Russia'}},
     {'ip_add': '1.1.1.1',
      'protocol': 'Vless',
-     'is_active': 'True',
+     'is_active': True,
      'max_cert': 10,
      'count_cert': 4,
      'region': {'id': 1,
@@ -17,7 +17,7 @@ servers = [
                 'name': 'Poland'}},
     {'ip_add': '2.2.2.2',
      'protocol': 'Vless',
-     'is_active': 'True',
+     'is_active': True,
      'max_cert': 10,
      'count_cert': 7,
      'region': {'id': 1,
@@ -25,7 +25,7 @@ servers = [
                 'name': 'Poland'}},
     {'ip_add': '3.3.3.3',
      'protocol': 'OpenVPN',
-     'is_active': 'True',
+     'is_active': False,
      'max_cert': 10,
      'count_cert': 7,
      'region': {'id': 1,
@@ -40,7 +40,7 @@ subscription_1 = {'user_id': 1,
                              'name': 'Netherland'},
                   'start_date': '13.05.2025',
                   'end_date': '18.05.2025',
-                  'is_active': 'True',
+                  'is_active': True,
                   'updated_at': '17.05.2025',
                   'file': 'url://for-connect/to-vpn'}
 
@@ -51,7 +51,7 @@ subscription_2 = {'user_id': 2,
                              'name': 'Poland'},
                   'start_date': '14.05.2025',
                   'end_date': '24.06.2025',
-                  'is_active': 'True',
+                  'is_active': True,
                   'updated_at': '16.05.2025',
                   'file': 'url://for-connect/to-vpn'}
 
@@ -67,7 +67,7 @@ user_1 = {'id': 1,
                                       'name': 'Netherland'},
                            'start_date': '13.05.2025',
                            'end_date': '18.05.2025',
-                           'is_active': 'True',
+                           'is_active': True,
                            'updated_at': '17.05.2025',
                            'file': 'url://for-connect/to-vpn'}}
 
@@ -77,3 +77,11 @@ user_2 = {'id': 2,
           'reg_data': '14.05.2025',
           'ref_count': 0,
           'subscription': None}
+
+response_2 = {'content': 'Здесь будут данные о сертификате',
+            'filename': 'my_file.ovpn',
+            'type': 'ovpn'}
+
+response = {'type': 'qr',
+              'image': 'https://habrastorage.org/r/w1560/getpro/habr/upload_files/6fd/508/626/6fd5086261339cbd2e39695d6e1c9bb0.png',
+              'url': 'https://telegra.ph/OpenVPN-na-Windows-05-17'}

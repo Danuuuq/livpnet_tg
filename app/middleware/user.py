@@ -16,7 +16,7 @@ class UserMiddleware(BaseMiddleware):
         data: Dict[str, Any]
     ) -> Any:
         # TODO: Будем запрашивать у бэкенда совместно с подпиской
-        data['current_user'] = user_2
+        data['current_user'] = user_1
         return await handler(event, data)
         # async with get_session_database() as db_session:
         #     data['current_user'] = await user_crud.get_by_tg_id(
