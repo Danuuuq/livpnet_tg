@@ -20,34 +20,17 @@ from .examples_data import servers, subscription_1
 router = Router()
 
 
-# @router.callback_query(F.data == 'get_subscription')
-# async def get_subscription_user(call: CallbackQuery, current_user: dict):
-#     """CallBack запрос для получения подписки пользователя."""
-#     await call.answer('Загружаю информацию о подписке', show_alert=False)
-#     # TODO: Подписка будет в current_user
-#     if current_user.get('subscription'):
-#         await call.message.delete()
-#         await call.message.answer(
-#             CommonMessage.SUBSCRIPTION_INFO.format(**subscription_1),
-#             reply_markup=subscription_inline_kb())
-#     else:
-#         await call.message.delete()
-#         await call.message.answer(
-#             CommonMessage.SUBSCRIPTION_WELCOME,
-#             reply_markup=subscription_inline_kb(trial=True))
-
-
 @router.callback_query(F.data == 'pay_subscription')
 async def pay_subscription(call: CallbackQuery, state: FSMContext,
                            current_user: dict):
     """CallBack запрос для покупки или продления подписки."""
     await state.clear()
-    await call.answer('Начинаем оформление подписки', show_alert=False)
+    await call.answer(CommonMessage.LOAD_MSG_CHOICE_SUB, show_alert=False)
     if current_user.get('subscription'):
         async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
             await call.message.delete()
             await call.message.answer(
-                'Продлеваем или меняем подписку?',
+                CommonMessage.CHOICE_MSG_NEW_OR_OLD,
                 reply_markup=choice_sub_inline_kb())
     else:
         async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
@@ -55,7 +38,7 @@ async def pay_subscription(call: CallbackQuery, state: FSMContext,
             await state.update_data(servers=servers)
             await call.message.delete()
             await call.message.answer(
-                'Выбери вариант подписки:',
+                CommonMessage.CHOICE_MSG_TYPE_SUB,
                 reply_markup=choice_type_inline_kb(trial=True))
             await state.set_state(SubscriptionForm.type)
 
@@ -64,14 +47,14 @@ async def pay_subscription(call: CallbackQuery, state: FSMContext,
 async def get_trial(call: CallbackQuery, state: FSMContext):
     """CallBack запрос для получения пробной подписки."""
     await state.clear()
-    await call.answer('Оформляем пробную подписку', show_alert=False)
+    await call.answer(CommonMessage.LOAD_MSG_TRIAL_SUB, show_alert=False)
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         # TODO: Запросить у бэкенда доступные сервера
         await state.update_data(servers=servers)
         await state.update_data(type='trial')
         await call.message.delete()
         await call.message.answer(
-            'Выбери локацию для подключения:',
+            CommonMessage.CHOICE_MSG_LOCATION,
             reply_markup=choice_location_kb(servers))
     await state.set_state(SubscriptionForm.location)
 
@@ -84,9 +67,7 @@ async def choice_type(call: CallbackQuery, state: FSMContext):
         await state.update_data(servers=servers)
         await call.message.delete()
         await call.message.answer(
-            ('Обратите внимание, после обновления подписки\n'
-             'старая останется действительной до конца срока действия\n'
-            'Выбери вариант подписки:'),
+            CommonMessage.MSG_FOR_UPDATE_SUB,
             reply_markup=choice_type_inline_kb(trial=False))
     await state.set_state(SubscriptionForm.type)
 
@@ -98,7 +79,7 @@ async def choice_duration(call: CallbackQuery, state: FSMContext):
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         await call.message.delete()
         await call.message.answer(
-            'Выбери на какой срок оформишь подписку:',
+            CommonMessage.CHOICE_MSG_DURATION,
             reply_markup=choice_duration_kb())
     await state.set_state(SubscriptionForm.duration)
 
@@ -112,7 +93,7 @@ async def choice_location(call: CallbackQuery, state: FSMContext):
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         await call.message.delete()
         await call.message.answer(
-            'Выбери локацию для подключения:',
+            CommonMessage.CHOICE_MSG_LOCATION,
             reply_markup=choice_location_kb(servers))
     await state.set_state(SubscriptionForm.location)
 
@@ -126,7 +107,7 @@ async def choice_protocol(call: CallbackQuery, state: FSMContext):
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         await call.message.delete()
         await call.message.answer(
-            'Выбери протокол для подключения:',
+            CommonMessage.CHOICE_MSG_PROTOCOL,
             reply_markup=choice_protocol_kb(servers))
     await state.set_state(SubscriptionForm.protocol)
 
@@ -164,7 +145,7 @@ async def extension_sub(call: CallbackQuery, state: FSMContext):
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         await call.message.delete()
         await call.message.answer(
-            'Выбери на какой срок хотите продлить подписку:',
+            CommonMessage.CHOICE_MSG_DURATION,
             reply_markup=choice_duration_kb())
     await state.set_state(SubscriptionForm.extension)
 
