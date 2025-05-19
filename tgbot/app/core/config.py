@@ -9,12 +9,22 @@ class Settings(BaseSettings):
 
     TOKEN_TG: str
     ADMINS: str
+    DOMAIN_NAME: str
+    APP_HOST: str
+    APP_PORT: int
+    WEBHOOK_MODE: bool = True
+    WEBHOOK_PATH: str = '/webhook'
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)),
                               '../../../infra', '.env'),
         env_file_encoding='utf-8',
         extra='ignore')
+
+    @property
+    def get_webhook_url(self) -> str:
+        """Ссылка для webhook подключений."""
+        return f'https://{self.DOMAIN_NAME}{self.WEBHOOK_PATH}'
 
 
 try:

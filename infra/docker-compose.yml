@@ -2,12 +2,20 @@ volumes:
   tg_data:
 
 services:
-  database:
-    image: postgres:17-alpine
-    container_name: tgdb_container
+  # database:
+  #   image: postgres:17-alpine
+  #   container_name: tgdb_container
+  #   env_file: .env
+  #   volumes:
+  #     - tg_data:/var/lib/postgresql/tgdata
+  #   ports:
+  #     - "${DB_PORT}:5432"
+  #   restart: unless-stopped
+
+  tgbot:
+    build: ./tgbot
+    container_name: tgbot_container
     env_file: .env
-    volumes:
-      - tg_data:/var/lib/postgresql/tgdata
     ports:
-      - "${DB_PORT}:5432"
+      - 9184:9184
     restart: unless-stopped
