@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DOMAIN_NAME: str
     APP_HOST: str
     APP_PORT: int
+    WEBHOOK_SECRET: str
     WEBHOOK_MODE: bool = True
     WEBHOOK_PATH: str = '/webhook'
 
