@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -56,6 +56,9 @@ class Certificate(Base):
     filename: Mapped[str] = mapped_column(
         String(SettingFieldDB.MAX_LENGTH_FILENAME),
         nullable=False, unique=True)
+    url_vless: Mapped[str] = mapped_column(
+        Text, nullable=True, unique=True
+    )
 
     server_id: Mapped[int] = mapped_column(
         ForeignKey('server.id'), nullable=True)

@@ -9,7 +9,7 @@ class CRUDSubscription(CRUDBase):
     """CRUD операции для модели с подписками."""
 
     async def get_by_user(self, user_id: int,
-                           session: AsyncSession) -> Subscription | None:
+                          session: AsyncSession) -> Subscription | None:
         """Получение объекта пользователя по id телеграмма."""
         db_obj = await session.execute(
             select(self.model).where(self.model.user_id == user_id)

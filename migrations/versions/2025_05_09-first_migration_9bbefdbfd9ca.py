@@ -71,6 +71,7 @@ def upgrade() -> None:
     )
     op.create_table('certificate',
     sa.Column('filename', sa.String(length=64), nullable=False),
+    sa.Column('url_vless', sa.Text(), nullable=True),
     sa.Column('server_id', sa.BigInteger(), nullable=True),
     sa.Column('subscription_id', sa.BigInteger(), nullable=True),
     sa.Column('id', sa.BigInteger(), nullable=False),
@@ -79,7 +80,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['server_id'], ['server.id'], ),
     sa.ForeignKeyConstraint(['subscription_id'], ['subscription.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('filename')
+    sa.UniqueConstraint('filename'),
+    sa.UniqueConstraint('url_vless')
     )
     # ### end Alembic commands ###
 

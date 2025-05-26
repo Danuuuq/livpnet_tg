@@ -7,24 +7,24 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Класс для базовых настроек приложения."""
 
-    DB_HOST: str
-    DB_PORT: int
-    POSTGRES_DB: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
+    TOKEN_TG: str
+    ADMINS: str
+    DOMAIN_NAME: str
+    APP_HOST: str
+    APP_PORT: int
+    WEBHOOK_MODE: bool = True
+    WEBHOOK_PATH: str = '/webhook'
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              '../../infra', '.env'),
+                              '../../../infra', '.env'),
         env_file_encoding='utf-8',
         extra='ignore')
 
     @property
-    def get_db_url(self) -> str:
-        """Ссылка для подключения к базе данных."""
-        return (f'postgresql+asyncpg://{self.POSTGRES_USER}:'
-                f'{self.POSTGRES_PASSWORD}@'
-                f'{self.DB_HOST}:{self.DB_PORT}/{self.POSTGRES_DB}')
+    def get_webhook_url(self) -> str:
+        """Ссылка для webhook подключений."""
+        return f'https://{self.DOMAIN_NAME}{self.WEBHOOK_PATH}'
 
 
 try:
