@@ -1,43 +1,15 @@
 from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import Annotated, AsyncGenerator, TypeVar
+from typing import AsyncGenerator, TypeVar
 
-from sqlalchemy import BigInteger, func
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
-    AsyncAttrs,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    declared_attr,
-    mapped_column,
-)
-
 from app.core.config import settings
-
-created_at = Annotated[datetime, mapped_column(
-    server_default=func.now(timezone=True))]
-updated_at = Annotated[datetime, mapped_column(
-    server_default=func.now(timezone=True), onupdate=func.now(timezone=True))]
-
-
-class Base(AsyncAttrs, DeclarativeBase):
-    """Базовый класс для моделей."""
-
-    __abstract__ = True
-
-    @declared_attr.directive
-    def __tablename__(cls) -> str:
-        return cls.__name__.lower()
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    created_at: Mapped[created_at]
-    updated_at: Mapped[updated_at]
-
+from app.core.log_config import log_action_status
+from app.models.base import Base
 
 engine = create_async_engine(settings.get_db_url)
 async_session_maker = async_sessionmaker(
@@ -46,29 +18,44 @@ async_session_maker = async_sessionmaker(
 ModelType = TypeVar('ModelType', bound=Base)
 
 
-@asynccontextmanager
-async def get_session_database() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Создание сессий для подключения к БД."""
     async with async_session_maker() as async_session:
         try:
+            log_action_status(message='Сессия открыта')
             yield async_session
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             await async_session.rollback()
-            raise
+            log_action_status(
+                error=e,
+                action_name='Ошибка работы с БД')
+            raise SQLAlchemyError(f'Ошибка работы с БД: {str(e)}')
         finally:
+            log_action_status(message='Сессия закрыта')
             await async_session.close()
+
+
+@asynccontextmanager
+async def get_session_database() -> AsyncGenerator[AsyncSession, None]:
+    """Создание сессий для подключения к БД lifespan задач."""
+    async for session in get_async_session():
+        yield session
 
 
 async def commit_change(
     session: AsyncSession,
-    obj: ModelType | None = None) -> ModelType | None:
+    obj: ModelType | None = None,
+) -> ModelType | None:
     """Безопасное выполнение действий с БД."""
     try:
         await session.commit()
         if obj:
             await session.refresh(obj)
-    except (IntegrityError, SQLAlchemyError):
+    except SQLAlchemyError as e:
         await session.rollback()
-        raise
+        log_action_status(
+            error=e,
+            action_name='Сохранение в БД')
+        raise SQLAlchemyError(f'Ошибка сохранения в БД: {str(e)}')
     else:
         return obj

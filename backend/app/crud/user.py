@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.crud.base import CRUDBase
 from app.models.user import User
@@ -12,7 +13,9 @@ class CRUDUser(CRUDBase):
                            session: AsyncSession) -> User | None:
         """Получение объекта пользователя по id телеграмма."""
         db_obj = await session.execute(
-            select(self.model).where(self.model.telegram_id == tg_id)
+            select(self.model)
+            .where(self.model.telegram_id == tg_id)
+            .options(joinedload(self.model.subscription))
         )
         return db_obj.scalars().first()
 

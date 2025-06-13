@@ -1,24 +1,37 @@
 from typing import Awaitable, Callable, Dict, Any
 
+import aiohttp
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
-# from app.core.database import get_session_database
-# from app.crud.user import user_crud
-from app.handlers.common.examples_data import user_1, user_2
+from app.core.config import settings
+from app.schemas.user import UserBase
 
 
 class UserMiddleware(BaseMiddleware):
+
+    async def fetch_user_data(self, event):
+        refer_from = None
+        if (isinstance(event, Message) and
+            event.text and event.text.startswith("/start")):
+            arg_ref = event.text.strip().split(maxsplit=1)
+            refer_from = int(arg_ref[1]) if (len(arg_ref) > 1 and
+                                             arg_ref[1].isdigit()) else None
+        payload = UserBase(telegram_id=event.from_user.id,
+                           refer_from_id=refer_from)
+        url = settings.get_backend_url + settings.AUTH_PATH
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload.model_dump()) as resp:
+                if resp.status != 201:
+                    return {}
+                return await resp.json()
+
     async def __call__(
         self,
         handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
         event: Any,
         data: Dict[str, Any]
     ) -> Any:
-        # TODO: Будем запрашивать у бэкенда совместно с подпиской
-        data['current_user'] = user_1
+        user_data = await self.fetch_user_data(event)
+        data['current_user'] = user_data
         return await handler(event, data)
-        # async with get_session_database() as db_session:
-        #     data['current_user'] = await user_crud.get_by_tg_id(
-        #         event.from_user.id, db_session)
-        #     return await handler(event, data)

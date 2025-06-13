@@ -1,5 +1,5 @@
 from aiogram import F, Router
-from aiogram.filters import CommandStart, CommandObject
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -10,29 +10,19 @@ router = Router()
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext,
-                    current_user: dict, command: CommandObject):
+async def cmd_start(message: Message, state: FSMContext, current_user: dict):
     """Команда для запуска бота."""
     await state.clear()
-    if current_user:
-        subscription = current_user.get('subscription')
-        if subscription:
-            await message.answer(
-                CommonMessage.HELLO_FOR_CLIENT.format(
-                    name=message.from_user.first_name,
-                    end_data=subscription.get('end_date')),
-                reply_markup=main_inline_kb())
-        else:
-            await message.answer(
-                CommonMessage.HELLO_WITHOUT_SUB.format(
-                    name=message.from_user.first_name),
-                reply_markup=main_inline_kb())
-    else:
-        # TODO: Передаем бэкенду информацию о клиенте
-        # TODO: и аргументы команды для рефералки
-        # TODO: command & message.from_user
+    subscription = current_user.get('subscription')
+    if subscription:
         await message.answer(
-            CommonMessage.WELCOME.format(
+            CommonMessage.HELLO_FOR_CLIENT.format(
+                name=message.from_user.first_name,
+                end_data=subscription.get('end_date')),
+            reply_markup=main_inline_kb())
+    else:
+        await message.answer(
+            CommonMessage.HELLO_WITHOUT_SUB.format(
                 name=message.from_user.first_name),
             reply_markup=main_inline_kb())
 

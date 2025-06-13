@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.base import CRUDBase
-from app.models.subscription import Subscription
+from app.models.subscription import Subscription, SubscriptionPrice
 
 
 class CRUDSubscription(CRUDBase):
@@ -10,7 +10,7 @@ class CRUDSubscription(CRUDBase):
 
     async def get_by_user(self, user_id: int,
                           session: AsyncSession) -> Subscription | None:
-        """Получение объекта пользователя по id телеграмма."""
+        """Получение подписки пользователя."""
         db_obj = await session.execute(
             select(self.model).where(self.model.user_id == user_id)
         )
@@ -18,3 +18,4 @@ class CRUDSubscription(CRUDBase):
 
 
 subscription_crud = CRUDSubscription(Subscription)
+price_crud = CRUDBase(SubscriptionPrice)
