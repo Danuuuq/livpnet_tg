@@ -15,6 +15,8 @@ async def cmd_start(message: Message, state: FSMContext, current_user: dict):
     await state.clear()
     subscription = current_user.get('subscription')
     if subscription:
+        # TODO: Предусмотреть что может быть несколько подписок
+        subscription = subscription.pop()
         await message.answer(
             CommonMessage.HELLO_FOR_CLIENT.format(
                 name=message.from_user.first_name,
@@ -34,6 +36,7 @@ async def callback_start(call: CallbackQuery, state: FSMContext,
     await state.clear()
     subscription = current_user.get('subscription')
     if subscription:
+        subscription = subscription.pop()
         await call.message.delete()
         await call.message.answer(
             CommonMessage.HELLO_FOR_CLIENT.format(

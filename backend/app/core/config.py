@@ -12,7 +12,6 @@ class Settings(BaseSettings):
         'Реализация бизнес-логики, взаимодействия с серверами, '
         'сервисами по оплате услуг и сбору информации.')
     API_KEY: str
-    API_CERT_HOOK: str = 'certificates'
     BACKEND_HOST: str
     BACKEND_PORT: int
     DB_HOST: str
@@ -33,7 +32,6 @@ class Settings(BaseSettings):
         return (f'postgresql+asyncpg://{self.POSTGRES_USER}:'
                 f'{self.POSTGRES_PASSWORD}@'
                 f'{self.DB_HOST}:{self.DB_PORT}/{self.POSTGRES_DB}')
-
 
 try:
     settings = Settings()

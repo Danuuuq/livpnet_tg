@@ -1,5 +1,6 @@
 import enum
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -47,7 +48,7 @@ class Subscription(Base):
         'Region', remote_side='Region.id', back_populates='subscriptions')
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey('user.id'), nullable=True)
+        ForeignKey('user.id'), nullable=False)
     user: Mapped['User'] = relationship(
         'User', remote_side='User.id', back_populates='subscription')
 
@@ -64,7 +65,7 @@ class SubscriptionPrice(Base):
     duration: Mapped[SubscriptionDuration] = mapped_column(
         Enum(SubscriptionDuration), nullable=False)
 
-    price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
 
     region_id: Mapped[int] = mapped_column(
         ForeignKey("region.id"), nullable=True)

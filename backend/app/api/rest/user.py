@@ -25,4 +25,14 @@ async def register_user(
     - **refer_from_id** — id (в БД) пользователя который пригласил;
     Возвращает созданного пользователя с метаинформацией.
     """
-    return await user_service.get_or_create(user, session)
+    user = await user_service.get_or_create(user, session)
+    return UserDB.model_validate(user)
+    # active_subscription = next(
+    #     (sub for sub in user.subscription if sub.is_active),
+    #     None
+    # )
+
+    # return UserDB.model_validate({
+    #     **user.__dict__,
+    #     "subscription": active_subscription,
+    # })

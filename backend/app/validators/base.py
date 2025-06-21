@@ -10,7 +10,7 @@ async def get_or_404(
     obj_id: int,
     session: AsyncSession
 ) -> Base:
-    """Проверка на наличие поста в базе данных."""
+    """Проверка на наличие объекта в базе данных."""
     db_obj = await crud.get_by_id(obj_id, session)
     if db_obj is None:
         raise HTTPException(

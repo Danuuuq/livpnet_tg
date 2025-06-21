@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.crud.base import CRUDBase
 from app.models.subscription import Subscription, SubscriptionPrice
@@ -12,7 +13,9 @@ class CRUDSubscription(CRUDBase):
                           session: AsyncSession) -> Subscription | None:
         """Получение подписки пользователя."""
         db_obj = await session.execute(
-            select(self.model).where(self.model.user_id == user_id)
+            select(self.model)
+            .options(selectinload(self.model.certificates))
+            .where(self.model.user_id == user_id)
         )
         return db_obj.scalars().first()
 

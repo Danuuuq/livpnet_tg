@@ -28,15 +28,44 @@ class SubscriptionCreate(BaseModel):
 
     tg_id: int = Field(description='Телеграмм id пользователя')
     type: SubscriptionType = Field(description='Количество устройств')
-    duration: SubscriptionDuration = Field(description='Длительность подписки')
+    duration: SubscriptionDuration | None = Field(default=None,
+                                                  description='Длительность подписки')
     region_code: str = Field(min_length=2, max_length=2,
                              description='Код региона (ISO)')
     protocol: VPNProtocol = Field(description='Протокол VPN-соединения')
 
 
-class SubscriptionDB(BaseModel):
-    """Подробная информация о подписке пользователя."""
+class SubscriptionInfoDB(BaseModel):
+    """Информация о подписке пользователя."""
 
-    type: SubscriptionType = Field(description="Тип подписки: количество устройств")
+    type: SubscriptionType = Field(
+        description="Тип подписки: количество устройств")
     end_date: datetime = Field(description="Дата окончания")
-    certificates: list[CertificateFile] = Field(description="Список сертификатов")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SubscriptionDB(SubscriptionInfoDB):
+    """Подробная информация о подписке пользователя."""
+    certificates: list[str] = Field(
+        description="Ссылки на загрузку сертификатов")
+
+
+class SubscriptionCreateDB(BaseModel):
+    """Схема для создания подписки в БД."""
+
+    user_id: int = Field(description="ID пользователя")
+    region_id: int = Field(description="ID региона")
+    type: SubscriptionType = Field(description="Тип подписки")
+    is_active: bool = Field(default=True, description="Активна ли подписка")
+    end_date: datetime = Field(description="Дата окончания подписки")
+
+
+class CertificateCreateDB(BaseModel):
+    """Схема для создания сертификата в БД."""
+
+    filename: str = Field(description="Имя файла сертификата")
+    url_vless: str | None = Field(default=None,
+                                  description="Ссылка на vless (если есть)")
+    server_id: int = Field(description="ID сервера")
+    subscription_id: int = Field(description="ID подписки")

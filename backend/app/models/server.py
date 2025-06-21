@@ -41,7 +41,7 @@ class Server(Base):
     domain_name: Mapped[str] = mapped_column(
         String(SettingFieldDB.MAX_LENGTH_NAME), nullable=False, unique=True)
     protocol: Mapped[VPNProtocol] = mapped_column(
-        Enum(VPNProtocol), nullable=False) 
+        Enum(VPNProtocol), nullable=False)
     is_active: Mapped[bool] = mapped_column(
         Boolean, default=SettingFieldDB.DEFAULT_ACTIVE_SRV, nullable=False)
     max_certificates: Mapped[int] = mapped_column(
@@ -50,7 +50,7 @@ class Server(Base):
         Integer, default=SettingFieldDB.DEFAULT_FOR_COUNT, nullable=False)
 
     region_id: Mapped[int] = mapped_column(
-        ForeignKey('region.id'), nullable=True)
+        ForeignKey('region.id'), nullable=False)
     region: Mapped['Region'] = relationship(
         'Region', remote_side='Region.id', back_populates='servers')
 

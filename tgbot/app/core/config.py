@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     BACKEND_HOST: str
     BACKEND_PORT: int
     AUTH_PATH: str = '/auth/'
+    SERVER_PATH: str = '/server/active'
+    SUBSCRIPTION_PATH: str = '/subscription/'
+    PRICE_PATH: str = 'price'
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)),

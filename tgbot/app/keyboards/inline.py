@@ -6,6 +6,7 @@ from aiogram.types import (
 )
 
 from app.messages.common import CommonMessage, Keyboards
+from app.schemas.subscription import SubscriptionDuration, SubscriptionType
 
 
 def main_inline_kb() -> InlineKeyboardMarkup:
@@ -49,9 +50,9 @@ def choice_type_inline_kb(trial: bool = False) -> InlineKeyboardMarkup:
     """Инлайн клавиатура с выбором подписки."""
     inline_kb_list = [
         [InlineKeyboardButton(text=Keyboards.TWO_DEVICE,
-                              callback_data='2_device')],
+                              callback_data=SubscriptionType.devices_2)],
         [InlineKeyboardButton(text=Keyboards.FOUR_DEVICE,
-                              callback_data='4_device')],
+                              callback_data=SubscriptionType.devices_4)],
     ]
     if trial:
         inline_kb_list.append(
@@ -67,11 +68,11 @@ def choice_duration_kb() -> InlineKeyboardMarkup:
     """Инлайн клавиатура с выбором подписки."""
     inline_kb_list = [
         [InlineKeyboardButton(text=Keyboards.ONE_MONTH,
-                              callback_data='1_month')],
+                              callback_data=SubscriptionDuration.month_1)],
         [InlineKeyboardButton(text=Keyboards.SIX_MONTH,
-                              callback_data='2_month')],
+                              callback_data=SubscriptionDuration.month_6)],
         [InlineKeyboardButton(text=Keyboards.TWELVE_MONTH,
-                              callback_data='12_month')],
+                              callback_data=SubscriptionDuration.year_1)],
         [InlineKeyboardButton(text=Keyboards.RETURN,
                               callback_data='main_menu')]
     ]
@@ -96,8 +97,9 @@ def choice_location_kb(servers: Any | dict,
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
-def choice_protocol_kb(servers: Any | dict,
-                       ) -> InlineKeyboardMarkup:
+def choice_protocol_kb(
+    servers: Any | dict,
+) -> InlineKeyboardMarkup:
     """Инлайн клавиатура с выбором региона сервера."""
     protocols = {s.get('protocol') for s in servers}
     inline_kb_list = [
@@ -112,10 +114,17 @@ def choice_protocol_kb(servers: Any | dict,
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
-def keys_inline_kb(active: bool = False) -> InlineKeyboardMarkup:
+def keys_inline_kb(
+    certificates: list[str] | None = None,
+) -> InlineKeyboardMarkup:
     """Инлайн клавиатура в ключах и информационных блоках."""
-    if active:
+    if certificates:
         inline_kb_list = [
+            [InlineKeyboardButton(
+                text=f'Сертификат № {idx+1}',
+                url=certificate)] for idx, certificate in enumerate(certificates)
+        ]
+        inline_kb_list += [
             [InlineKeyboardButton(text=Keyboards.HELP,
                                   callback_data='get_help')],
             [InlineKeyboardButton(text=Keyboards.RETURN,

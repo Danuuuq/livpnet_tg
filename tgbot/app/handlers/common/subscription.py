@@ -4,6 +4,7 @@ from aiogram.types import CallbackQuery
 from aiogram.utils.chat_action import ChatActionSender
 
 from app.core.bot import bot
+from app.core.config import settings
 from app.forms.subscription import SubscriptionForm
 from app.keyboards.inline import (
     choice_duration_kb,
@@ -14,8 +15,7 @@ from app.keyboards.inline import (
     keys_inline_kb,
     subscription_inline_kb)
 from app.messages.common import CommonMessage
-# На время разработки хэндлеров
-from .examples_data import servers, subscription_1
+from app.schemas.subscription import SubscriptionCreate, SubscriptionType
 
 router = Router()
 
@@ -34,7 +34,9 @@ async def pay_subscription(call: CallbackQuery, state: FSMContext,
                 reply_markup=choice_sub_inline_kb())
     else:
         async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-            # TODO: Запросить у бэкенда доступные сервера
+            url = settings.get_backend_url + settings.SERVER_PATH
+            async with call.bot.http_client.get(url) as response:
+                servers = await response.json()
             await state.update_data(servers=servers)
             await call.message.delete()
             await call.message.answer(
@@ -49,9 +51,11 @@ async def get_trial(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await call.answer(CommonMessage.LOAD_MSG_TRIAL_SUB, show_alert=False)
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-        # TODO: Запросить у бэкенда доступные сервера
+        url = settings.get_backend_url + settings.SERVER_PATH
+        async with call.bot.http_client.get(url) as response:
+            servers = await response.json()
         await state.update_data(servers=servers)
-        await state.update_data(type='trial')
+        await state.update_data(type=SubscriptionType.trial)
         await call.message.delete()
         await call.message.answer(
             CommonMessage.CHOICE_MSG_LOCATION,
@@ -63,7 +67,9 @@ async def get_trial(call: CallbackQuery, state: FSMContext):
 async def choice_type(call: CallbackQuery, state: FSMContext):
     """CallBack запрос для выбора типа, только покупка/обновление."""
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-        # TODO: Запросить у бэкенда доступные сервера
+        url = settings.get_backend_url + settings.SERVER_PATH
+        async with call.bot.http_client.get(url) as response:
+            servers = await response.json()
         await state.update_data(servers=servers)
         await call.message.delete()
         await call.message.answer(
@@ -117,18 +123,29 @@ async def create_subscription(call: CallbackQuery, state: FSMContext):
     """Обращение к бэкенду за новой подпиской."""
     await state.update_data(protocol=call.data)
     data = await state.get_data()
-    if data.get('type') == 'trial':
-        async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-            # TODO: обращение к бэкенду за созданием подписки, он вернет подписку
-            # TODO: передаваться будет форма со всей информацией, но без серверов
+    async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
+        url = settings.get_backend_url + settings.SUBSCRIPTION_PATH
+        payload = SubscriptionCreate(
+            tg_id=call.from_user.id,
+            type=data['type'],
+            duration=data.get('duration', None),
+            region_code=data['location'],
+            protocol=data['protocol']
+        )
+        async with call.bot.http_client.post(
+            url, json=payload.model_dump(mode='json')
+        ) as response:
+
+            if response.status != 200:
+                await call.message.answer('Ошибка оформления подписки')
+                return
+            answer = await response.json()
+    if data.get('type') == SubscriptionType.trial:
             await call.message.delete()
             await call.message.answer(
-                CommonMessage.SUBSCRIPTION_INFO.format(**subscription_1),
+                CommonMessage.SUBSCRIPTION_INFO.format(**answer),
                 reply_markup=subscription_inline_kb())
     else:
-        async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-            # TODO: обращение к бэкенду за созданием подписки, он вернет подписку
-            # TODO: передаваться будет форма со всей информацией, но без серверов
             await call.message.delete()
             # TODO: Ждем от бэкенда ссылку на оплату
             await call.message.answer(

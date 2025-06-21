@@ -7,7 +7,6 @@ from sqlalchemy.orm import joinedload, selectinload
 from app.crud.base import CRUDBase
 from app.core.database import commit_change
 from app.models.server import Region, Server, Certificate
-from app.schemas.server import ServerCreate
 
 
 class CRUDServer(CRUDBase):
@@ -39,18 +38,9 @@ class CRUDServer(CRUDBase):
 
     async def create(
         self,
-        obj_in: ServerCreate,
+        obj_in: dict,
         session: AsyncSession,
     ) -> Server:
-        # data = obj_in.model_dump()
-
-        # region_code = data.pop("region_code", None)
-        # if region_code:
-        #     region = await self.get_region_by_code(region_code, session)
-        #     if not region:
-        #         raise ValueError(f"Регион с кодом '{region_code}' не найден.")
-        #     data["region_id"] = region.id
-
         db_obj = self.model(**obj_in)
         session.add(db_obj)
         return await commit_change(session, db_obj)
@@ -97,4 +87,4 @@ class CRUDServer(CRUDBase):
 
 
 server_crud = CRUDServer(Server)
-certificate_crud = CRUDServer(Certificate)
+certificate_crud = CRUDBase(Certificate)
