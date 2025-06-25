@@ -20,13 +20,24 @@ router = Router()
 async def get_subscription_user(call: CallbackQuery, current_user: dict):
     """CallBack запрос для получения подписки пользователя."""
     await call.answer(CommonMessage.LOAD_MSG_SUB, show_alert=False)
-    # TODO: Предусмотреть что может быть несколько подписок
-    subscription = current_user.get('subscription', None)
-    if subscription:
-        subscription = subscription.pop()
+    subscriptions = current_user.get('subscription', None)
+    if subscriptions:
+        lines = []
+        for idx, sub in enumerate(subscriptions, start=1):
+            region = sub.get('region').get('name', '❓Регион неизвестен')
+            end_date = sub.get('end_date', '')[:10]
+            sub_type = sub.get('type', 'неизвестно')
+            lines.append(
+                f'🔹 <b>Подписка №{idx}</b>\n'
+                f'Тип: {sub_type}\n'
+                f'Регион: {region}\n'
+                f'До: <b>{end_date}</b>\n'
+            )
+
+        subs_info = '\n'.join(lines)
         await call.message.delete()
         await call.message.answer(
-            CommonMessage.SUBSCRIPTION_INFO.format(**subscription),
+            CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
             reply_markup=subscription_inline_kb())
     else:
         await call.message.delete()
@@ -117,12 +128,10 @@ async def get_certificate(call: CallbackQuery, current_user: dict):
                     await call.message.answer('Ошибка запроса сертификатов')
                     return
                 answer = await response.json()
-            certificates = answer.get('certificates')
-            # TODO: Учесть разные протоколы у влесс QR код добавляется например
             await call.message.delete()
             await call.message.answer(
                 CommonMessage.MSG_FOR_OVPN,
-                reply_markup=keys_inline_kb(certificates))
+                reply_markup=keys_inline_kb(answer))
     else:
         await call.message.delete()
         await call.message.answer(

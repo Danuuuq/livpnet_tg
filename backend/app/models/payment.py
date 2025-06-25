@@ -2,7 +2,15 @@ import enum
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum, Boolean, ForeignKey, Numeric, String, UniqueConstraint
+from sqlalchemy import (
+    Enum,
+    Boolean,
+    ForeignKey,
+    JSON,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -29,6 +37,7 @@ class Payment(Base):
     operation_id: Mapped[str] = mapped_column(
         String(SettingFieldDB.MAX_LENGTH_ID_OPERATION),
         nullable=False, unique=True)
+    intent_data: Mapped[dict] = mapped_column(JSON, nullable=True)
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey('user.id'), nullable=False)
@@ -37,7 +46,7 @@ class Payment(Base):
 
 
 class ReferralBonus(Base):
-    """Модель для реферальных ссылок."""
+    """Модель для бонусов после оплаты другом подписки."""
 
     bonus_given: Mapped[bool] = mapped_column(
         Boolean, default=SettingFieldDB.DEFAULT_GIVEN_BONUS, nullable=False)
@@ -48,12 +57,16 @@ class ReferralBonus(Base):
     invited_id: Mapped[int] = mapped_column(
         ForeignKey('user.id'), nullable=False)
     invited: Mapped['User'] = relationship(
-        'User', remote_side='User.id', back_populates='invites')
+        'User', foreign_keys=[invited_id], back_populates='invites',)
+    # invited: Mapped['User'] = relationship(
+    #     'User', remote_side='User.id', back_populates='invites',)
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey('user.id'), nullable=False)
     user: Mapped['User'] = relationship(
-        'User', remote_side='User.id', back_populates='referrals')
+        'User', foreign_keys=[user_id], back_populates='referrals')
+    # user: Mapped['User'] = relationship(
+    #     'User', remote_side='User.id', back_populates='referrals')
 
     __table_args__ = (
         UniqueConstraint('user_id', 'invited_id', name='uq_user_invited'),

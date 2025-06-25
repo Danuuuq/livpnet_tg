@@ -24,9 +24,27 @@ class SubscriptionCreate(BaseModel):
     """Схема данных при оформлении подписки из Telegram."""
 
     tg_id: int = Field(description='Телеграмм id пользователя')
+    sub_id: int | None = Field(default=None,
+                               description='id подписки обновления')
     type: SubscriptionType = Field(description='Количество устройств')
     duration: SubscriptionDuration | None = Field(default=None,
                                                   description='Длительность подписки')
     region_code: str = Field(min_length=2, max_length=2,
                              description='Код региона (ISO)')
     protocol: VPNProtocol = Field(description='Протокол VPN-соединения')
+
+
+class SubscriptionRenew(BaseModel):
+    """Схема данных для продления подписки из Telegram."""
+
+    tg_id: int = Field(description='Телеграмм id пользователя')
+    sub_id: int = Field(description='id подписки обновления')
+    extension: SubscriptionDuration = Field(description='Длительность подписки')
+
+
+# class SubscriptionExtension(BaseModel):
+#     """Схема данных при продлении подписки из Telegram."""
+
+#     tg_id: int = Field(description='Телеграмм id пользователя')
+#     sub_id: int = Field(description='id подписки обновления')
+#     duration: SubscriptionDuration = Field(description='Длительность подписки')

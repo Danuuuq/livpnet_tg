@@ -33,3 +33,5 @@ class SettingServers:
     API_CERT_HOOK: str = 'certificates'
     API_CHECK_HEALTH: str = 'health'
     API_OK_HEALTH: str = 'ok'
+    URL_TGBOT: str = 'https://t.me/livpnet_bot'
+    YOOKASSA_NAME: str = 'YooKassa'

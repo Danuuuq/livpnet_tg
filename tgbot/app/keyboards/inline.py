@@ -46,6 +46,23 @@ def subscription_inline_kb(trial: bool = False) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
+def choice_subscription_inline_kb(subscriptions: dict) -> InlineKeyboardMarkup:
+    """Инлайн клавиатура с выбором подписки."""
+    inline_kb_list = [
+        [
+            InlineKeyboardButton(
+                text=(f'{sub.get('region').get('name')} '
+                      f'до {sub.get('end_date')[:10]} '
+                      f'на {sub.get('type')} '),
+                callback_data=f'{sub.get('id')}')
+        ] for sub in subscriptions
+    ]
+    inline_kb_list.append(
+        [InlineKeyboardButton(text=Keyboards.RETURN,
+                              callback_data='main_menu')])
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
+
 def choice_type_inline_kb(trial: bool = False) -> InlineKeyboardMarkup:
     """Инлайн клавиатура с выбором подписки."""
     inline_kb_list = [
@@ -114,16 +131,34 @@ def choice_protocol_kb(
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
+def payment_kb(url: str) -> InlineKeyboardMarkup:
+    """Инлайн клавиатура для оплаты подписки."""
+    inline_kb_list = [
+        [InlineKeyboardButton(text='Оплата на Ю.Касса', url=url)],
+    ]
+    inline_kb_list.append(
+        [InlineKeyboardButton(text=Keyboards.RETURN,
+                              callback_data='main_menu')])
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
 def keys_inline_kb(
-    certificates: list[str] | None = None,
+    subscriptions: list[str] | None = None,
 ) -> InlineKeyboardMarkup:
     """Инлайн клавиатура в ключах и информационных блоках."""
-    if certificates:
-        inline_kb_list = [
-            [InlineKeyboardButton(
-                text=f'Сертификат № {idx+1}',
-                url=certificate)] for idx, certificate in enumerate(certificates)
-        ]
+    
+    inline_kb_list = []
+
+    if subscriptions:
+        for subscription in subscriptions:
+            if subscription.get("certificates"):
+                for idx, certificate in enumerate(subscription["certificates"]):
+                    inline_kb_list.append([
+                        InlineKeyboardButton(
+                            text=f'Сертификат {subscription.get('region').get('name', '❓Регион неизвестен')} №{idx + 1}',
+                            url=certificate
+                        )
+                    ])
+        
         inline_kb_list += [
             [InlineKeyboardButton(text=Keyboards.HELP,
                                   callback_data='get_help')],
@@ -157,9 +192,11 @@ def choice_sub_inline_kb() -> InlineKeyboardMarkup:
     """Инлайн клавиатура в выборе подписки."""
     inline_kb_list = [
         [InlineKeyboardButton(text=Keyboards.EXTENSION,
-                              callback_data='extension_sub')],
+                              callback_data='renew_sub')],
         [InlineKeyboardButton(text=Keyboards.UPDATE,
                               callback_data='update_sub')],
+        [InlineKeyboardButton(text=Keyboards.NEW,
+                              callback_data='new_sub')],
         [InlineKeyboardButton(text=Keyboards.RETURN,
                               callback_data='main_menu')]
     ]
