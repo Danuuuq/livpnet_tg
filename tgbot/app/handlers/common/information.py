@@ -1,10 +1,10 @@
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, FSInputFile, Message
+from aiogram.types import CallbackQuery, Message
 from aiogram.utils.chat_action import ChatActionSender
-from tempfile import NamedTemporaryFile
 
 from app.core.bot import bot
+from app.core.config import settings
 from app.forms.subscription import SupportForm
 from app.keyboards.inline import (
     device_inline_kb,
@@ -12,7 +12,6 @@ from app.keyboards.inline import (
     protocol_inline_kb,
     subscription_inline_kb)
 from app.messages.common import CommonMessage
-from .examples_data import response
 
 router = Router()
 
@@ -21,12 +20,24 @@ router = Router()
 async def get_subscription_user(call: CallbackQuery, current_user: dict):
     """CallBack запрос для получения подписки пользователя."""
     await call.answer(CommonMessage.LOAD_MSG_SUB, show_alert=False)
-    # TODO: Подписка будет в current_user
-    subscription = current_user.get('subscription')
-    if subscription:
+    subscriptions = current_user.get('subscription', None)
+    if subscriptions:
+        lines = []
+        for idx, sub in enumerate(subscriptions, start=1):
+            region = sub.get('region').get('name', '❓Регион неизвестен')
+            end_date = sub.get('end_date', '')[:10]
+            sub_type = sub.get('type', 'неизвестно')
+            lines.append(
+                f'🔹 <b>Подписка №{idx}</b>\n'
+                f'Тип: {sub_type}\n'
+                f'Регион: {region}\n'
+                f'До: <b>{end_date}</b>\n'
+            )
+
+        subs_info = '\n'.join(lines)
         await call.message.delete()
         await call.message.answer(
-            CommonMessage.SUBSCRIPTION_INFO.format(**subscription),
+            CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
             reply_markup=subscription_inline_kb())
     else:
         await call.message.delete()
@@ -43,9 +54,9 @@ async def get_ref_url(call: CallbackQuery, current_user: dict):
     # TODO: Сделать запрос к бекенду по всем рефералкам
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         await call.message.delete()
-        await call.message.answer(CommonMessage.REFERRAL_MESSAGE.format(
-            user_id=call.from_user.id),
-                                  reply_markup=keys_inline_kb(True))
+        await call.message.answer(
+            CommonMessage.REFERRAL_MESSAGE.format(user_id=call.from_user.id),
+            reply_markup=keys_inline_kb())
 
 
 @router.callback_query(F.data == 'get_price')
@@ -53,9 +64,17 @@ async def get_price(call: CallbackQuery):
     """CallBack запрос для получения информации по стоимости."""
     await call.answer(CommonMessage.LOAD_MSG_PRICE, show_alert=False)
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
+        url = (settings.get_backend_url +
+                settings.SUBSCRIPTION_PATH +
+                settings.PRICE_PATH)
+        async with call.bot.http_client.get(url) as response:
+            if response.status != 200:
+                await call.message.answer('Ошибка запроса цены на ВПН')
+                return
+            answer = await response.json()
         await call.message.delete()
-        await call.message.answer(CommonMessage.PRICE_MESSAGE,
-                                  reply_markup=keys_inline_kb(False))
+        await call.message.answer(CommonMessage.format_price_message(answer),
+                                  reply_markup=keys_inline_kb())
 
 
 @router.callback_query(F.data == 'get_help')
@@ -101,28 +120,20 @@ async def get_certificate(call: CallbackQuery, current_user: dict):
     if current_user.get('subscription'):
         async with ChatActionSender.typing(bot=bot,
                                            chat_id=call.message.chat.id):
-            # TODO: Обращение к бэкенду за QR кодом или ovpn файлами
-            # TODO: Должно содержать content, filename, type
-            if response["type"] == "ovpn":
-                with NamedTemporaryFile("w+", delete=False,
-                                        suffix=".ovpn") as f:
-                    f.write(response['content'])
-                    temp_path = f.name
-                await call.message.delete()
-                await call.message.answer_document(
-                    document=FSInputFile(temp_path,
-                                         filename=response['filename']),
-                    caption=CommonMessage.MSG_FOR_OVPN,
-                    reply_markup=keys_inline_kb(True))
-            elif response["type"] == "qr":
-                await call.message.delete()
-                await call.message.answer_photo(
-                    photo=response.get('image'),
-                    caption=CommonMessage.MSG_FOR_VLESS.format(
-                        url=response.get('url')),
-                    reply_markup=keys_inline_kb(True))
+            url = (settings.get_backend_url +
+                   settings.SUBSCRIPTION_PATH +
+                   str(call.from_user.id))
+            async with call.bot.http_client.get(url) as response:
+                if response.status != 200:
+                    await call.message.answer('Ошибка запроса сертификатов')
+                    return
+                answer = await response.json()
+            await call.message.delete()
+            await call.message.answer(
+                CommonMessage.MSG_FOR_OVPN,
+                reply_markup=keys_inline_kb(answer))
     else:
         await call.message.delete()
         await call.message.answer(
                 CommonMessage.MSG_WITHOUT_SUB,
-                reply_markup=keys_inline_kb(False))
+                reply_markup=keys_inline_kb())

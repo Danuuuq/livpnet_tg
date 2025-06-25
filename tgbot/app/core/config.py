@@ -10,11 +10,16 @@ class Settings(BaseSettings):
     TOKEN_TG: str
     ADMINS: str
     DOMAIN_NAME: str
-    APP_HOST: str
-    APP_PORT: int
+    TG_HOST: str
+    TG_PORT: int
     WEBHOOK_SECRET: str
-    WEBHOOK_MODE: bool = True
     WEBHOOK_PATH: str = '/webhook'
+    BACKEND_HOST: str
+    BACKEND_PORT: int
+    AUTH_PATH: str = '/auth/'
+    SERVER_PATH: str = '/server/active'
+    SUBSCRIPTION_PATH: str = '/subscription/'
+    PRICE_PATH: str = 'price'
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -26,6 +31,11 @@ class Settings(BaseSettings):
     def get_webhook_url(self) -> str:
         """Ссылка для webhook подключений."""
         return f'https://{self.DOMAIN_NAME}{self.WEBHOOK_PATH}'
+
+    @property
+    def get_backend_url(self) -> str:
+        """Ссылка для обращений к backend."""
+        return f'http://{self.BACKEND_HOST}:{self.BACKEND_PORT}'
 
 
 try:

@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.models.base import Base
 from app.core.variables import SettingFieldDB
 
 if TYPE_CHECKING:
+    from app.models.payment import Payment, ReferralBonus
     from app.models.subscription import Subscription
 
 
@@ -28,3 +29,26 @@ class User(Base):
 
     subscription: Mapped[list['Subscription']] = relationship(
         'Subscription', back_populates='user', lazy='joined')
+
+    payments: Mapped[list['Payment']] = relationship(
+        'Payment', back_populates='user', lazy='selectin')
+
+    invites: Mapped[list['ReferralBonus']] = relationship(
+        'ReferralBonus',
+        back_populates='invited',
+        foreign_keys='ReferralBonus.invited_id',
+        lazy='selectin',
+    )
+
+    referrals: Mapped[list['ReferralBonus']] = relationship(
+        'ReferralBonus',
+        back_populates='user',
+        foreign_keys='ReferralBonus.user_id',
+        lazy='selectin',
+    )
+
+    # invites: Mapped[list['ReferralBonus']] = relationship(
+    #     'ReferralBonus', back_populates='user', lazy='joined')
+
+    # referrals: Mapped[list['ReferralBonus']] = relationship(
+    #     'ReferralBonus', back_populates='user', lazy='joined')

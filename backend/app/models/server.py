@@ -1,13 +1,19 @@
+import enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.models.base import Base
 from app.core.variables import SettingFieldDB
 
 if TYPE_CHECKING:
     from app.models.subscription import Subscription
+
+
+class VPNProtocol(str, enum.Enum):
+    openvpn = "OpenVPN"
+    vless = "Vless"
 
 
 class Region(Base):
@@ -32,8 +38,10 @@ class Server(Base):
 
     ip_address: Mapped[str] = mapped_column(
         String(SettingFieldDB.MAX_LENGTH_IP), nullable=False, unique=True)
-    protocol: Mapped[str] = mapped_column(
-        String(SettingFieldDB.MAX_LENGTH_PROTOCOL), nullable=False)
+    domain_name: Mapped[str] = mapped_column(
+        String(SettingFieldDB.MAX_LENGTH_NAME), nullable=False, unique=True)
+    protocol: Mapped[VPNProtocol] = mapped_column(
+        Enum(VPNProtocol), nullable=False)
     is_active: Mapped[bool] = mapped_column(
         Boolean, default=SettingFieldDB.DEFAULT_ACTIVE_SRV, nullable=False)
     max_certificates: Mapped[int] = mapped_column(
@@ -42,7 +50,7 @@ class Server(Base):
         Integer, default=SettingFieldDB.DEFAULT_FOR_COUNT, nullable=False)
 
     region_id: Mapped[int] = mapped_column(
-        ForeignKey('region.id'), nullable=True)
+        ForeignKey('region.id'), nullable=False)
     region: Mapped['Region'] = relationship(
         'Region', remote_side='Region.id', back_populates='servers')
 

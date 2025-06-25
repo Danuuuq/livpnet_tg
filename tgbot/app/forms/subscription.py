@@ -10,7 +10,15 @@ class SubscriptionForm(StatesGroup):
     protocol = State()
     count_device = State()
     duration = State()
+    subscription = State()
+
+
+class SubscriptionExtensionForm(StatesGroup):
+    """Класс формы для продления подписки."""
+
     extension = State()
+    sub_id = State()
+    type = State()
 
 
 class SupportForm(StatesGroup):

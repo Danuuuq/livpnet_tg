@@ -1,51 +1,76 @@
 from typing import Generic, Type, TypeVar, Sequence
 
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import Base, commit_change
 
 ModelType = TypeVar('ModelType', bound=Base)
-DictType = TypeVar('DictType', bound=dict)
+CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
+UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
 
 
-class CRUDBase(Generic[DictType, ModelType]):
+class CRUDBase(Generic[CreateSchemaType, UpdateSchemaType, ModelType]):
     """Базовые CRUD операции."""
 
-    def __init__(self, model: Type[ModelType]) -> None:
+    def __init__(
+        self,
+        model: Type[ModelType],
+    ) -> None:
         """Инициализация модели для CRUD операций."""
         self.model = model
 
-    async def get_by_id(self, obj_id: int,
-                        session: AsyncSession) -> ModelType | None:
+    async def get_by_id(
+        self,
+        obj_id: int,
+        session: AsyncSession,
+    ) -> ModelType | None:
         """Получение объекта модели по id."""
         db_obj = await session.execute(
             select(self.model).where(
                 self.model.id == obj_id))
         return db_obj.scalars().first()
 
-    async def get_all(self, session: AsyncSession) -> Sequence[ModelType]:
+    async def get_all(
+        self,
+        session: AsyncSession,
+    ) -> Sequence[ModelType]:
         """Получить все объекты модели."""
         db_objs = await session.execute(select(self.model))
         return db_objs.scalars().all()
 
-    async def create(self, obj_in: DictType,
-                     session: AsyncSession) -> ModelType | None:
+    async def create(
+        self,
+        obj_in: CreateSchemaType,
+        session: AsyncSession,
+    ) -> ModelType | None:
         """Создание объекта модели."""
-        db_obj = self.model(**obj_in)
+        db_obj = self.model(**obj_in.model_dump())
         session.add(db_obj)
         return await commit_change(session, db_obj)
 
-    async def update(self, db_obj: ModelType, obj_in: DictType,
-                     session: AsyncSession) -> ModelType | None:
+    async def update(
+        self,
+        db_obj: ModelType,
+        obj_in: UpdateSchemaType,
+        session: AsyncSession,
+    ) -> ModelType | None:
         """Обновление объекта модели."""
-        for field, value in obj_in.items():
-            setattr(db_obj, field, value)
+        update_data = obj_in.model_dump(exclude_unset=True)
+        obj_data = jsonable_encoder(db_obj)
+        for field in obj_data:
+            if field in update_data:
+                setattr(db_obj, field, update_data[field])
         session.add(db_obj)
         return await commit_change(session, db_obj)
 
-    async def delete(self, db_obj: ModelType,
-                     session: AsyncSession) -> ModelType | None:
+    async def delete(
+        self,
+        db_obj: ModelType,
+        session: AsyncSession,
+    ) -> ModelType | None:
         """Удаление объекта модели."""
         await session.delete(db_obj)
         await commit_change(session)
