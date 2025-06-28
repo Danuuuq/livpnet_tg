@@ -1,4 +1,4 @@
-  GNU nano 7.2                                                       add_client.sh                                                                #!/bin/bash
+#!/bin/bash
 
 set -e
 
@@ -6,7 +6,7 @@ CLIENT_NAME="$1"
 
 # Папка, куда сохраняется итоговый .ovpn
 OUTPUT_DIR="/etc/openvpn/clients"
-mkdir -p "$OUTPUT_DIR"
+/usr/bin/mkdir -p "$OUTPUT_DIR"
 
 # Перейти в Easy-RSA
 cd /etc/openvpn/server/easy-rsa/ || exit 1

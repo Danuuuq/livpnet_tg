@@ -35,13 +35,6 @@ async def cmd_start(message: Message, state: FSMContext, current_user: dict):
             ),
             reply_markup=main_inline_kb()
         )
-        # TODO: Предусмотреть что может быть несколько подписок
-        # subscription = subscription.pop()
-        # await message.answer(
-        #     CommonMessage.HELLO_FOR_CLIENT.format(
-        #         name=message.from_user.first_name,
-        #         end_data=subscription.get('end_date')),
-        #     reply_markup=main_inline_kb())
     else:
         await message.answer(
             CommonMessage.HELLO_WITHOUT_SUB.format(

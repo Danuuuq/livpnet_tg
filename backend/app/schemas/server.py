@@ -12,12 +12,12 @@ from app.models.server import VPNProtocol
 class RegionBase(BaseModel):
     """Базовая модель для регионов."""
 
-    code: str = Field(description='Код региона')
+    code: str = Field(description='Код региона (ISO)')
     name: str = Field(description='Название региона')
 
 
 class RegionDB(RegionBase):
-    """Базовая модель для регионов."""
+    """Модель для выдачи информации и регионе."""
 
     model_config = ConfigDict(from_attributes=True)
 

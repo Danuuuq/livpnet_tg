@@ -21,41 +21,69 @@ class Region(Base):
 
     code: Mapped[str] = mapped_column(
         String(SettingFieldDB.MAX_LENGTH_CODE_REGION),
-        unique=True, nullable=False)
+        unique=True,
+        nullable=False,
+    )
     name: Mapped[str] = mapped_column(
         String(SettingFieldDB.MAX_LENGTH_NAME),
-        unique=True, nullable=False)
-
+        unique=True,
+        nullable=False,
+    )
     servers: Mapped[list['Server']] = relationship(
-        'Server', back_populates='region')
-
+        'Server',
+        back_populates='region',
+    )
     subscriptions: Mapped[list['Subscription']] = relationship(
-        'Subscription', back_populates='region')
+        'Subscription',
+        back_populates='region',
+    )
 
 
 class Server(Base):
     """Модель для серверов."""
 
     ip_address: Mapped[str] = mapped_column(
-        String(SettingFieldDB.MAX_LENGTH_IP), nullable=False, unique=True)
+        String(SettingFieldDB.MAX_LENGTH_IP),
+        nullable=False,
+        unique=True,
+    )
     domain_name: Mapped[str] = mapped_column(
-        String(SettingFieldDB.MAX_LENGTH_NAME), nullable=False, unique=True)
+        String(SettingFieldDB.MAX_LENGTH_NAME),
+        nullable=False,
+        unique=True,
+    )
     protocol: Mapped[VPNProtocol] = mapped_column(
-        Enum(VPNProtocol), nullable=False)
+        Enum(VPNProtocol),
+        nullable=False,
+    )
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=SettingFieldDB.DEFAULT_ACTIVE_SRV, nullable=False)
+        Boolean,
+        default=SettingFieldDB.DEFAULT_ACTIVE_SRV,
+        nullable=False,
+    )
     max_certificates: Mapped[int] = mapped_column(
-        Integer, default=SettingFieldDB.DEFAULT_MAX_CERT, nullable=False)
+        Integer,
+        default=SettingFieldDB.DEFAULT_MAX_CERT,
+        nullable=False,
+    )
     current_cert_count: Mapped[int] = mapped_column(
-        Integer, default=SettingFieldDB.DEFAULT_FOR_COUNT, nullable=False)
-
+        Integer,
+        default=SettingFieldDB.DEFAULT_FOR_COUNT,
+        nullable=False,
+    )
     region_id: Mapped[int] = mapped_column(
-        ForeignKey('region.id'), nullable=False)
+        ForeignKey('region.id'),
+        nullable=False,
+    )
     region: Mapped['Region'] = relationship(
-        'Region', remote_side='Region.id', back_populates='servers')
-
+        'Region',
+        remote_side='Region.id',
+        back_populates='servers',
+    )
     certificates: Mapped[list['Certificate']] = relationship(
-        'Certificate', back_populates='server')
+        'Certificate',
+        back_populates='server',
+    )
 
 
 class Certificate(Base):
@@ -63,19 +91,29 @@ class Certificate(Base):
 
     filename: Mapped[str] = mapped_column(
         String(SettingFieldDB.MAX_LENGTH_FILENAME),
-        nullable=False, unique=True)
-    url_vless: Mapped[str] = mapped_column(
-        Text, nullable=True, unique=True
+        nullable=False,
+        unique=True,
     )
-
+    url_vless: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+        unique=True,
+    )
     server_id: Mapped[int] = mapped_column(
-        ForeignKey('server.id'), nullable=True)
+        ForeignKey('server.id'),
+        nullable=True,
+    )
     server: Mapped['Server'] = relationship(
-        'Server', remote_side='Server.id',
-        back_populates='certificates')
-
+        'Server',
+        remote_side='Server.id',
+        back_populates='certificates',
+    )
     subscription_id: Mapped[int] = mapped_column(
-        ForeignKey('subscription.id'), nullable=True)
+        ForeignKey('subscription.id'),
+        nullable=True,
+    )
     subscription: Mapped['Subscription'] = relationship(
-        'Subscription', remote_side='Subscription.id',
-        back_populates='certificates')
+        'Subscription',
+        remote_side='Subscription.id',
+        back_populates='certificates',
+    )

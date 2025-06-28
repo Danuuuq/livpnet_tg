@@ -1,11 +1,26 @@
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from app.core.variables import SettingFieldDB
 from app.models.payment import PaymentStatus
 from app.models.server import VPNProtocol
 from app.models.subscription import SubscriptionType, SubscriptionDuration
+
+
+class YouKassaStatus(str, Enum):
+    waiting_for_capture = "waiting_for_capture"
+    succeeded = "succeeded"
+    canceled = "canceled"
+    pending = "pending"
+
+    def to_internal(self) -> PaymentStatus:
+        return {
+            YouKassaStatus.succeeded: PaymentStatus.success,
+            YouKassaStatus.pending: PaymentStatus.pending,
+            YouKassaStatus.canceled: PaymentStatus.failed,
+        }[self]
 
 
 class PaymentCreate(BaseModel):
@@ -22,6 +37,19 @@ class PaymentCreate(BaseModel):
     )
 
 
+class PaymentUpdateStatus(BaseModel):
+    """Схема для создания платежа."""
+
+    status: PaymentStatus = Field(description='Статус платежа')
+
+    @field_validator('status', mode='before')
+    def convert_yookassa_status(cls, v):
+        try:
+            return YouKassaStatus(v).to_internal()
+        except ValueError:
+            raise ValueError(f'Неверный статус оплаты: {v}')
+
+
 class PaymentAnswer(BaseModel):
     """Схема для ответа с ссылкой на платеж."""
 
@@ -31,19 +59,14 @@ class PaymentAnswer(BaseModel):
         description='Длительность подписки',
     )
     region_code: str = Field(
-        min_length=2,
-        max_length=2,
+        min_length=SettingFieldDB.LENGTH_REGION_CODE,
+        max_length=SettingFieldDB.LENGTH_REGION_CODE,
         description='Код региона (ISO)',
     )
-    protocol: VPNProtocol = Field(description='Протокол VPN-соединения')
+    protocol: VPNProtocol | None = Field(
+        default=None,
+        description='Протокол VPN-соединения')
     url: str = Field(description='Ссылка на оплату')
-
-
-class YouKassaStatus(str, Enum):
-    waiting_for_capture = "waiting_for_capture"
-    succeeded = "succeeded"
-    canceled = "canceled"
-    pending = "pending"
 
 
 class YooKassaWebhookObject(BaseModel):
@@ -52,6 +75,7 @@ class YooKassaWebhookObject(BaseModel):
 
 
 class YooKassaWebhookNotification(BaseModel):
+    # TODO: Разобраться с ошибкой перегрузки Mypy
     type: str = Field(description="Тип уведомления", example="notification")
     event: str = Field(description="Событие", example="payment.waiting_for_capture")
     object: YooKassaWebhookObject

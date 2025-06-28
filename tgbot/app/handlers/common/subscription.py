@@ -216,7 +216,7 @@ async def renew_sub(
     state: FSMContext,
     current_user: dict,
 ):
-    """CallBack запрос для выбора подписки, только обновление."""
+    """CallBack запрос для выбора подписки, только продление."""
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         subscription = current_user.get('subscription')
         await call.message.delete()
@@ -266,12 +266,12 @@ async def extension_subscription(call: CallbackQuery, state: FSMContext):
     await state.update_data(extension=call.data)
     data = await state.get_data()
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-        url = (f'{settings.get_backend_url}{settings.SUBSCRIPTION_PATH}'
-               f'{call.from_user.id}/{data.get('sub_id')}')
+        url = f'{settings.get_backend_url}{settings.SUBSCRIPTION_PATH}'
         payload = SubscriptionRenew(
             tg_id=call.from_user.id,
             sub_id=data.get('sub_id'),
-            extension=data.get('extension'),
+            duration=data.get('extension'),
+            type=data.get('type')
         )
         async with call.bot.http_client.patch(
             url, json=payload.model_dump(mode='json')
@@ -282,6 +282,6 @@ async def extension_subscription(call: CallbackQuery, state: FSMContext):
             answer = await response.json()
         await call.message.delete()
         await call.message.answer(
-            CommonMessage.URL_FOR_PAY.format(**answer),
+            CommonMessage.URL_FOR_PAY_RENEW.format(**answer),
             reply_markup=payment_kb(answer.get('url')))
     await state.clear()

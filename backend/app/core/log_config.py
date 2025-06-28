@@ -6,7 +6,7 @@ from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Optional
+from typing import Any
 
 from fastapi.encoders import jsonable_encoder
 from loguru import logger
@@ -89,7 +89,7 @@ def log_db_action(
 
 
 def log_action_status(
-    error: Optional[Exception] = None,
+    error: Exception | None = None,
     action_name: str = 'Action',
     message: str = '',
 ) -> None:

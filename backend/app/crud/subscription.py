@@ -1,16 +1,32 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.crud.base import CRUDBase
+from app.models.server import Certificate
 from app.models.subscription import Subscription, SubscriptionPrice
 from app.schemas.subscription import SubscriptionDuration, SubscriptionType
 
 
 class CRUDSubscription(CRUDBase):
     """CRUD операции для модели с подписками."""
+
+    async def get_by_id(
+        self,
+        obj_id: int,
+        session: AsyncSession,
+    ) -> Subscription | None:
+        """Получение подписки по id со всеми данными."""
+        db_obj = await session.execute(
+            select(self.model)
+            .options(
+                selectinload(self.model.certificates)
+                .selectinload(Certificate.server),
+                selectinload(self.model.region))
+            .where(self.model.id == obj_id))
+        return db_obj.scalars().first()
 
     async def get_by_user(
         self,

@@ -3,8 +3,10 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.core.variables import SettingFieldDB
 from app.models.server import VPNProtocol
 from app.models.subscription import SubscriptionType, SubscriptionDuration
+from app.schemas.server import RegionDB
 
 
 class CertificateFile(BaseModel):
@@ -28,13 +30,20 @@ class SubscriptionCreate(BaseModel):
     """Схема данных при оформлении подписки из Telegram."""
 
     tg_id: int = Field(description='Телеграмм id пользователя')
-    sub_id: int | None = Field(default=None,
-                               description='Id подписки при обновлении')
+    sub_id: int | None = Field(
+        default=None,
+        description='Id подписки при обновлении',
+    )
     type: SubscriptionType = Field(description='Количество устройств')
-    duration: SubscriptionDuration | None = Field(default=None,
-                                                  description='Длительность подписки')
-    region_code: str = Field(min_length=2, max_length=2,
-                             description='Код региона (ISO)')
+    duration: SubscriptionDuration | None = Field(
+        default=None,
+        description='Длительность подписки',
+    )
+    region_code: str = Field(
+        min_length=SettingFieldDB.LENGTH_REGION_CODE,
+        max_length=SettingFieldDB.LENGTH_REGION_CODE,
+        description='Код региона (ISO)',
+    )
     protocol: VPNProtocol = Field(description='Протокол VPN-соединения')
 
     @model_validator(mode='after')
@@ -50,24 +59,41 @@ class SubscriptionCreate(BaseModel):
         return self
 
 
+class SubscriptionUpdate(SubscriptionCreate):
+    """Схема данных для обновления подписки из Telegram."""
+    region_code: str | None = Field(
+        default=None,
+        min_length=SettingFieldDB.LENGTH_REGION_CODE,
+        max_length=SettingFieldDB.LENGTH_REGION_CODE,
+        description='Код региона (ISO)')
+    protocol: VPNProtocol | None = Field(
+        default=None,
+        description='Протокол VPN-соединения',
+    )
+
+
 class SubscriptionRenew(BaseModel):
-    """Схема данных при оформлении подписки из Telegram."""
+    """Схема данных при продлении подписки из Telegram."""
 
     tg_id: int = Field(description='Телеграмм id пользователя')
     sub_id: int = Field(description='id подписки обновления')
-    extension: SubscriptionDuration = Field(description='Длительность подписки')
+    duration: SubscriptionDuration = Field(description='Длительность подписки')
+    type: SubscriptionType | None = Field(
+        default=None,
+        description='Длительность подписки',
+    )
 
 
-class RegionShort(BaseModel):
-    code: str = Field(description='Код региона (ISO)')
-    name: str = Field(description='Название региона')
+# class RegionShort(BaseModel):
+#     """Короткая информация о регионе."""
+#     code: str = Field(description='Код региона (ISO)')
+#     name: str = Field(description='Название региона')
 
-    model_config = ConfigDict(from_attributes=True)
+#     model_config = ConfigDict(from_attributes=True)
 
 
 class SubscriptionInfoShortDB(BaseModel):
     """Информация о подписке пользователя."""
-
 
     id: int = Field(description='ID подписки')
     type: SubscriptionType = Field(
@@ -80,7 +106,7 @@ class SubscriptionInfoShortDB(BaseModel):
 class SubscriptionInfoDB(SubscriptionInfoShortDB):
     """Информация о подписке пользователя."""
 
-    region: RegionShort = Field(description='Регион подписки')
+    region: RegionDB = Field(description='Регион подписки')
 
 
 class SubscriptionDB(SubscriptionInfoDB):
@@ -103,7 +129,9 @@ class CertificateCreateDB(BaseModel):
     """Схема для создания сертификата в БД."""
 
     filename: str = Field(description='Имя файла сертификата')
-    url_vless: str | None = Field(default=None,
-                                  description='Ссылка на vless (если есть)')
+    url_vless: str | None = Field(
+        default=None,
+        description='Ссылка на vless (если есть)',
+    )
     server_id: int = Field(description='ID сервера')
     subscription_id: int = Field(description='ID подписки')

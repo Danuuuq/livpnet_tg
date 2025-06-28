@@ -12,6 +12,7 @@ from app.schemas.subscription import (
     SubscriptionCreate,
     SubscriptionRenew,
 )
+from app.services.payment import check_status_from_yookassa
 from app.services.subscription import subscription_service
 
 router = APIRouter()
@@ -49,11 +50,14 @@ async def get_all_price(
 async def create_subscription(
     data_in: SubscriptionCreate | SubscriptionRenew,
     session: AsyncSession = Depends(get_async_session),
-) -> SubscriptionDB | PaymentAnswer:
+) -> JSONResponse | PaymentAnswer:
     """Оформление подписки для пользователя."""
     result = await subscription_service.trial_or_payment(data_in, session)
     if isinstance(result, SubscriptionDB):
-        return JSONResponse(status_code=201, content=result.model_dump(mode='json'))
+        return JSONResponse(
+            status_code=201,
+            content=result.model_dump(mode='json'),
+        )
     return result
 
 
@@ -67,9 +71,9 @@ async def webhook_payment_status(
     session: AsyncSession = Depends(get_async_session),
 ) -> None:
     """Действия после выполнения или не выполнения оплаты."""
-    # TODO: мы получим id операции и по нему узнаем какая подписка
-    await subscription_service.create_after_payment(data_in, session)
-    return JSONResponse(status_code=201, content=None)
+    payment, success = await check_status_from_yookassa(data_in, session)
+    if success:
+        await subscription_service.action_after_payment(payment, session)
 
 
 @router.delete(
@@ -100,17 +104,20 @@ async def get_subscriptions(
 
 
 @router.patch(
-    '/{tg_id}/{sub_id}',
-    response_model=SubscriptionDB,
+    '/',
+    response_model=PaymentAnswer,
     summary='Обновление|продление подписки пользователя',
     response_description='Изменение или продление подписки',
 )
 async def update_subscription(
     data_in: SubscriptionRenew,
     session: AsyncSession = Depends(get_async_session),
-) -> SubscriptionDB:
+) -> PaymentAnswer:
     """Обновление или продление подписки."""
-    return await subscription_service.get_sub_with_cert(session)
+    return await subscription_service.pay_update_subscription(
+        data_in,
+        session,
+    )
 
 
 @router.delete(
@@ -125,4 +132,8 @@ async def delete_subs_user(
     session: AsyncSession = Depends(get_async_session),
 ) -> SubscriptionDB:
     """Удаление/аннулирование сертификатов пользователя."""
-    return await subscription_service.revoke_certificate(tg_id, sub_id, session)
+    return await subscription_service.revoke_certificate(
+        tg_id,
+        sub_id,
+        session,
+    )

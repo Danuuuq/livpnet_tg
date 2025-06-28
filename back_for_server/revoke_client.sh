@@ -1,4 +1,4 @@
-  GNU nano 7.2                                                     revoke_client.sh                                                               #!/bin/bash
+#!/bin/bash
 
 set -e
 
@@ -32,4 +32,3 @@ cp pki/crl.pem "$CRL_PATH"
 chown nobody:nogroup "$CRL_PATH"
 
 echo "Сертификат ${CLIENT_NAME} отозван и удалён."
-

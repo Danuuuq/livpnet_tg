@@ -18,19 +18,3 @@ async def get_or_404(
             detail=f'Объект с id: {obj_id} отсутствует'
         )
     return db_obj
-
-
-# async def check_duplicate(
-#     crud: CRUDBase,
-#     post_title: str,
-#     session: AsyncSession
-# ) -> None:
-#     """Проверка на уникальность имени проекта."""
-#     project = await crud.get_by_title(
-#         post_title, session
-#     )
-#     if project:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail='Объект с таким именем уже существует!'
-#         )

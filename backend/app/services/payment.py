@@ -12,7 +12,12 @@ from app.core.variables import SettingServers
 from app.crud.payment import payment_crud
 from app.models.payment import PaymentStatus
 from app.models.user import User
-from app.schemas.payment import PaymentCreate
+from app.schemas.payment import (
+    PaymentCreate,
+    PaymentUpdateStatus,
+    YouKassaStatus,
+    YooKassaWebhookNotification
+)
 from app.schemas.subscription import SubscriptionCreate
 
 
@@ -31,10 +36,10 @@ async def create_payment(
         payment = Payment.create({
             'amount': {
                 'value': value,
-                'currency': 'RUB'
+                'currency': SettingServers.DEFAULT_CURRENCY
             },
             'confirmation': {
-                'type': 'redirect',
+                'type': SettingServers.DEFAULT_TYPE_CONFIRM,
                 'return_url': SettingServers.URL_TGBOT
             },
             'capture': True,
@@ -42,7 +47,6 @@ async def create_payment(
         }, uuid_payment)
     except ApiError as error:
             log_action_status(
-                error=ApiError,
                 action_name='Формирование ссылки',
                 message=('При формирования ссылки для пользователя: '
                          f'{user.telegram_id} произошла ошибка:{error}'),
@@ -56,8 +60,8 @@ async def create_payment(
             'sub_id': data_in.sub_id,
             "type": data_in.type,
             "duration": data_in.duration,
-            "region_code": data_in.region_code,
-            "protocol": data_in.protocol,
+            "region_code": data_in.region_code if not data_in.sub_id else None,
+            "protocol": data_in.protocol if not data_in.sub_id else None,
         }
         payment_db = PaymentCreate(
             amount=payment.amount.value,
@@ -67,5 +71,38 @@ async def create_payment(
             user_id=user.id,
             intent_data=intent
         )
+        log_action_status(
+            action_name='Формирование ссылки',
+            message=('Успешное формирование ссылки для пользователя: '
+                     f'{user.telegram_id} pay_id: {payment_db.operation_id}'),
+        )
         await payment_crud.create(payment_db, session)
         return payment.confirmation.confirmation_url
+
+
+async def check_status_from_yookassa(
+    data_in: YooKassaWebhookNotification,
+    session: AsyncSession,
+):
+    """Проверка статуса и присвоение рефералу бонуса."""
+    # TODO: Реализовать логику начисления бонуса рефералу
+    success = (True if data_in.object.status is YouKassaStatus.succeeded
+               else False)
+    if data_in.object.status is YouKassaStatus.waiting_for_capture:
+        return None, False
+    else:
+        payment = await payment_crud.get_by_operation_id(
+            data_in.object.id,
+            session,
+        )
+        if payment.status is PaymentStatus.success:
+            log_action_status(
+                action_name='Оповещение о выполненной транзакции',
+                message=(
+                    f'Повторное уведомление по успешному платежу {payment.id} '
+                    f'платеж уже был выполнен для юзера БД {payment.user_id}')
+            )
+            return None, False
+        upd_status = PaymentUpdateStatus(status=data_in.object.status)
+        payment = await payment_crud.update(payment, upd_status, session)
+        return payment, success

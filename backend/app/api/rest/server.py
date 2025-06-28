@@ -4,7 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_async_session
 from app.crud.server import server_crud
 from app.services.server import server_service
-from app.schemas.server import ServerWithRegionDB, ServerDB, ServerCreate, ServerUpdate
+from app.schemas.server import (
+    ServerWithRegionDB,
+    ServerDB,
+    ServerCreate,
+    ServerUpdate,
+)
 
 router = APIRouter()
 

@@ -29,6 +29,11 @@ class Settings(BaseSettings):
         extra='ignore')
 
     @property
+    def get_headers_auth(self) -> str:
+        """Ссылка для подключения к базе данных."""
+        return {'Authorization': f'Bearer {self.API_KEY}'}
+
+    @property
     def get_db_url(self) -> str:
         """Ссылка для подключения к базе данных."""
         return (f'postgresql+asyncpg://{self.POSTGRES_USER}:'

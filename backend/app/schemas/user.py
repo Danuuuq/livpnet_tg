@@ -18,7 +18,8 @@ class UserCreate(UserBase):
 class UserDB(UserBase):
     """Схема выдачи данных о пользователе."""
     subscription: list[SubscriptionInfoDB] | None = Field(
-        default=None, description='Подписка пользователя (если есть)'
+        default=None,
+        description='Подписка пользователя (если есть)',
     )
 
     model_config = ConfigDict(from_attributes=True)

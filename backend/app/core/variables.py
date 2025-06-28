@@ -13,6 +13,10 @@ class SettingFieldDB:
     MAX_LENGTH_PROTOCOL = 16
     MAX_LENGTH_FILENAME = 1024
     MAX_LENGTH_TYPE_SUB = 64
+    MAX_PRECISION_NUMERIC = 10
+    MAX_SCALE_NUMERIC = 2
+    LENGTH_REGION_CODE = 2
+    DEFAULT_CURRENCY = 'RUB'
 
 
 class SettingLogging:
@@ -35,3 +39,5 @@ class SettingServers:
     API_OK_HEALTH: str = 'ok'
     URL_TGBOT: str = 'https://t.me/livpnet_bot'
     YOOKASSA_NAME: str = 'YooKassa'
+    DEFAULT_CURRENCY = 'RUB'
+    DEFAULT_TYPE_CONFIRM = 'redirect'

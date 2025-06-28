@@ -29,45 +29,72 @@ class PaymentStatus(str, enum.Enum):
 class Payment(Base):
     """Модель для платежей."""
 
-    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(
+        Numeric(
+            SettingFieldDB.MAX_PRECISION_NUMERIC,
+            SettingFieldDB.MAX_SCALE_NUMERIC,
+        ),
+        nullable=False
+    )
     provider: Mapped[str] = mapped_column(
-        String(SettingFieldDB.MAX_LENGTH_NAME_PROVIDER), nullable=False)
+        String(SettingFieldDB.MAX_LENGTH_NAME_PROVIDER),
+        nullable=False,
+        )
     status: Mapped[PaymentStatus] = mapped_column(
-        Enum(PaymentStatus), nullable=False)
+        Enum(PaymentStatus),
+        nullable=False,
+    )
     operation_id: Mapped[str] = mapped_column(
         String(SettingFieldDB.MAX_LENGTH_ID_OPERATION),
-        nullable=False, unique=True)
+        nullable=False,
+        unique=True,
+    )
     intent_data: Mapped[dict] = mapped_column(JSON, nullable=True)
-
     user_id: Mapped[int] = mapped_column(
-        ForeignKey('user.id'), nullable=False)
+        ForeignKey('user.id'),
+        nullable=False,
+    )
     user: Mapped['User'] = relationship(
-        'User', remote_side='User.id', back_populates='payments')
+        'User',
+        remote_side='User.id',
+        back_populates='payments',
+    )
 
 
 class ReferralBonus(Base):
     """Модель для бонусов после оплаты другом подписки."""
 
     bonus_given: Mapped[bool] = mapped_column(
-        Boolean, default=SettingFieldDB.DEFAULT_GIVEN_BONUS, nullable=False)
-
+        Boolean,
+        default=SettingFieldDB.DEFAULT_GIVEN_BONUS,
+        nullable=False,
+    )
     bonus_size: Mapped[Decimal] = mapped_column(
-        Numeric(10, 2), default=SettingFieldDB.DEFAULT_BONUS, nullable=False)
-
+        Numeric(
+            SettingFieldDB.MAX_PRECISION_NUMERIC,
+            SettingFieldDB.MAX_SCALE_NUMERIC,
+        ),
+        default=SettingFieldDB.DEFAULT_BONUS,
+        nullable=False,
+    )
     invited_id: Mapped[int] = mapped_column(
-        ForeignKey('user.id'), nullable=False)
+        ForeignKey('user.id'),
+        nullable=False,
+    )
     invited: Mapped['User'] = relationship(
-        'User', foreign_keys=[invited_id], back_populates='invites',)
-    # invited: Mapped['User'] = relationship(
-    #     'User', remote_side='User.id', back_populates='invites',)
-
+        'User',
+        foreign_keys=[invited_id],
+        back_populates='invites',
+    )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey('user.id'), nullable=False)
+        ForeignKey('user.id'),
+        nullable=False,
+    )
     user: Mapped['User'] = relationship(
-        'User', foreign_keys=[user_id], back_populates='referrals')
-    # user: Mapped['User'] = relationship(
-    #     'User', remote_side='User.id', back_populates='referrals')
-
+        'User',
+        foreign_keys=[user_id],
+        back_populates='referrals',
+    )
     __table_args__ = (
         UniqueConstraint('user_id', 'invited_id', name='uq_user_invited'),
     )

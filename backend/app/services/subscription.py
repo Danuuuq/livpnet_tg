@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
@@ -9,25 +10,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.variables import SettingServers
-from app.crud.payment import payment_crud
 from app.crud.user import user_crud
 from app.crud.server import server_crud, certificate_crud
 from app.crud.subscription import subscription_crud, price_crud
 from app.core.log_config import log_action_status
-from app.models.server import Server
+from app.models.payment import Payment
+from app.models.server import Certificate, Server
 from app.models.subscription import (
     Subscription,
     SubscriptionDuration,
     SubscriptionType,
 )
 from app.models.user import User
-from app.schemas.payment import PaymentAnswer, YooKassaWebhookNotification
+from app.schemas.payment import PaymentAnswer
 from app.schemas.subscription import (
     CertificateCreateDB,
     SubscriptionDB,
     SubscriptionCreate,
     SubscriptionCreateDB,
     SubscriptionRenew,
+    SubscriptionUpdate,
 )
 from app.services.payment import create_payment
 
@@ -43,6 +45,7 @@ class SubscriptionService:
         tg_id: int,
         session: AsyncSession,
     ) -> tuple[User, Subscription | None]:
+        """Проверка наличия пользователя и подписки с возвратом."""
         user = await user_crud.get_by_tg_id(tg_id, session)
         if user:
             return user, user.subscription
@@ -59,7 +62,8 @@ class SubscriptionService:
         name: str,
     ) -> str:
         """Отправка запроса на генерацию сертификата."""
-        headers = {'Authorization': f'Bearer {settings.API_KEY}'}
+        # headers = {'Authorization': f'Bearer {settings.API_KEY}'}
+        headers = settings.get_headers_auth
         url = (f'https://{active_server.domain_name}'
                f'/{SettingServers.API_CERT_HOOK}')
         json_payload = {'name': name}
@@ -83,6 +87,24 @@ class SubscriptionService:
             )
             return data.get('download_url')
 
+    @staticmethod
+    def get_end_date(
+        duration: SubscriptionDuration | None,
+        sub_end_date: datetime | None = None
+    ) -> datetime:
+        if duration is None:
+            time_delta = timedelta(days=3)
+        elif duration is SubscriptionDuration.month_1:
+            time_delta = timedelta(days=30)
+        elif duration is SubscriptionDuration.month_6:
+            time_delta = timedelta(days=182)
+        elif duration is SubscriptionDuration.year_1:
+            time_delta = timedelta(days=365)
+        if (sub_end_date is None or
+            sub_end_date < datetime.now(timezone.utc).replace(tzinfo=None)):
+            return datetime.now(timezone.utc).replace(tzinfo=None) + time_delta
+        return sub_end_date + time_delta
+
     async def create_subscription(
         self,
         server: Server,
@@ -94,21 +116,12 @@ class SubscriptionService:
         vless: str | None = None,
     ) -> Subscription | None:
         """Создание первой подписки с сертификатами."""
-        if subscription_duration is None:
-            time_delta = timedelta(days=3)
-        elif subscription_duration is SubscriptionDuration.month_1:
-            time_delta = timedelta(days=30)
-        elif subscription_duration is SubscriptionDuration.month_6:
-            time_delta = timedelta(days=182)
-        elif subscription_duration is SubscriptionDuration.year_1:
-            time_delta = timedelta(days=365)
         sub_data = SubscriptionCreateDB(
             user_id=user.id,
             region_id=server.region_id,
             type=subscription_type,
             is_active=True,
-            end_date=(datetime.now(timezone.utc).replace(tzinfo=None) +
-                      time_delta),
+            end_date=self.get_end_date(subscription_duration),
         )
         subscription = await subscription_crud.create(sub_data, session)
         if subscription is None:
@@ -116,8 +129,28 @@ class SubscriptionService:
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f'Подписка для {user.telegram_id} не создана!'
             )
+        await self.create_cert_in_db(
+            server,
+            cert_links,
+            subscription,
+            session,
+            vless,
+        )
+        log_action_status(
+            action_name='Создание подписки',
+            message=(f'Подписка создана для пользователя {user.telegram_id}'
+                     f' с {len(cert_links)} сертификатами')
+        )
+        return subscription
 
-        # Создание записи о сертификатах
+    async def create_cert_in_db(
+        self,
+        server: Server,
+        cert_links: list[str],
+        subscription: Subscription,
+        session: AsyncSession,
+        vless: str | None = None,
+    ) -> None:
         for link in cert_links:
             cert_data = CertificateCreateDB(
                 filename=link,
@@ -126,12 +159,6 @@ class SubscriptionService:
                 subscription_id=subscription.id,
             )
             await certificate_crud.create(cert_data, session)
-        log_action_status(
-            action_name='Создание пробной подписки',
-            message=(f'Подписка создана для пользователя {user.telegram_id}'
-                     f' с {len(cert_links)} сертификатами')
-        )
-        return subscription
 
     async def check_active_server(
         self,
@@ -153,7 +180,8 @@ class SubscriptionService:
                         f'регион {region_code}')
             )
         active_server = None
-        headers = {'Authorization': f'Bearer {settings.API_KEY}'}
+        # headers = {'Authorization': f'Bearer {settings.API_KEY}'}
+        headers = settings.get_headers_auth_auth
         for check_server in active_servers:
             url = (f'https://{check_server.domain_name}'
                    f'/{SettingServers.API_CHECK_HEALTH}')
@@ -209,59 +237,215 @@ class SubscriptionService:
 
     async def create_link(
         self,
-        data_in: SubscriptionCreate,
+        data_in: SubscriptionCreate | SubscriptionRenew,
         user: User,
         session: AsyncSession,
+        type_sub: SubscriptionType | None = None,
+        region: str | None = None,
     ) -> PaymentAnswer:
+        type_sub = data_in.type or type_sub
         price = await price_crud.get_by_type_and_duration(
-            data_in.duration, data_in.type, session
+            data_in.duration,
+            type_sub,
+            session,
         )
         if price is None:
             log_action_status(
                 action_name='Наличие цен на подписку!',
                 message=(f'По данным параметрам: {data_in.duration}, '
-                         f'{data_in.type} нет доступных подписок')
+                         f'{type_sub} нет доступных подписок')
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=(f'По данным параметрам: {data_in.duration}, '
-                        f'{data_in.type} нет доступных подписок')
+                        f'{type_sub} нет доступных подписок')
             )
         url = await create_payment(price, data_in, user, session)
-        return PaymentAnswer(
-            amount=price,
-            type=data_in.type,
-            duration=data_in.duration,
-            region_code=data_in.region_code,
-            protocol=data_in.protocol,
-            url=url,
-        )
+        if isinstance(data_in, SubscriptionCreate):
+            return PaymentAnswer(
+                amount=price,
+                type=data_in.type,
+                duration=data_in.duration,
+                region_code=data_in.region_code,
+                protocol=data_in.protocol,
+                url=url,
+            )
+        elif isinstance(data_in, SubscriptionRenew):
+            return PaymentAnswer(
+                amount=price,
+                type=type_sub,
+                duration=data_in.duration,
+                region_code=region,
+                url=url,
+            )
 
-    async def create_after_payment(
+    async def action_after_payment(
         self,
-        data_in: YooKassaWebhookNotification,
+        payment: Payment,
         session: AsyncSession,
-    ) -> SubscriptionDB:
-        operation_id = data_in.object.id
-        payment = await payment_crud.get_by_operation_id(operation_id, session)
-        data_in = SubscriptionCreate(tg_id=payment.user.telegram_id, **payment.intent_data)
-        return await self.process_create(data_in, payment.user, session)
+    ) -> None:
+        """Действия после оплаты подписки.
 
-    async def process_create(
+        Есть id подписки но не указан протокол или тип, то это продление.
+        Есть id подписки и протокол или тип, то это изменение подписки.
+        Если нет id подписки, то это создание новой подписки.
+        """
+        if (payment.intent_data.get('sub_id') and
+            not payment.intent_data.get('protocol') and
+            not payment.intent_data.get('type')):
+            data_renew = SubscriptionRenew(
+                tg_id=payment.user.telegram_id,
+                **payment.intent_data,
+            )
+            await self.renewal_sub(data_renew, session)
+        elif (payment.intent_data.get('sub_id') and
+              (payment.intent_data.get('protocol') or
+               payment.intent_data.get('type'))):
+            data_in = SubscriptionUpdate(
+                tg_id=payment.user.telegram_id,
+                **payment.intent_data,
+            )
+            log_action_status(
+                action_name='Обновление подписки',
+                message=(f'Обновление подписки {data_in.sub_id} '
+                         f'пользователя {payment.user.telegram_id}!')
+            )
+            await self.update_sub(data_in, payment.user, session)
+        else:
+            data_in = SubscriptionCreate(
+                tg_id=payment.user.telegram_id,
+                **payment.intent_data,
+            )
+            await self.process_create(data_in, payment.user, session)
+
+    async def update_sub(
+        self,
+        data_in: SubscriptionUpdate,
+        user: User,
+        session: AsyncSession,
+    ) -> None:
+        sub_db = await subscription_crud.get_by_id(data_in.sub_id, session)
+        if sub_db is None:
+            log_action_status(
+                action_name='Обновление подписки',
+                message=f'Подписка {data_in.sub_id} не найдена!'
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=f'Подписка {data_in.sub_id} не найдена!'
+            )
+        region_changed = (data_in.region_code and data_in.region_code != 
+                          sub_db.region.code)
+        protocol_changed = (data_in.protocol and data_in.protocol !=
+                            sub_db.certificates[0].server.protocol)
+        type_changed = data_in.type and data_in.type != sub_db.type
+
+        if region_changed or protocol_changed:
+            async with AsyncClient() as client:
+                for cert in sub_db.certificates:
+                    await self.delete_certificate(cert, client, session)
+            cert_links, active_server = await self.get_server_and_certs(
+                data_in,
+                user,
+                session
+            )
+            sub_db.is_active = True
+            sub_db.end_date = self.get_end_date(
+                data_in.duration,
+                sub_db.end_date,
+            )
+            sub_db.region = active_server.region_id
+            sub_db.type = data_in.type
+            session.add(sub_db)
+            await self.create_cert_in_db(
+                active_server,
+                cert_links,
+                sub_db,
+                session,
+            )
+
+        elif type_changed:
+            server = await server_crud.get_by_id(
+                sub_db.certificates[0].server_id,
+                session,
+            )
+            device_count = {
+                SubscriptionType.trial: 1,
+                SubscriptionType.devices_2: 2,
+                SubscriptionType.devices_4: 4
+            }
+            old_count = device_count.get(sub_db.type, 1)
+            new_count = device_count.get(data_in.type, 1)
+            sub_db.is_active = True
+            sub_db.end_date = self.get_end_date(
+                data_in.duration,
+                sub_db.end_date,
+            )
+            sub_db.type = data_in.type
+            session.add(sub_db)
+            if new_count > old_count:
+                delta = new_count - old_count
+                cert_names = [uuid4().hex for _ in range(delta)]
+                cert_tasks = [
+                    self.request_certificate(server, name)
+                    for name in cert_names
+                ]
+                cert_links = await asyncio.gather(*cert_tasks)
+                await self.create_cert_in_db(
+                    server,
+                    cert_links,
+                    sub_db,
+                    session,
+                )
+            elif new_count < old_count:
+                to_remove = sub_db.certificates[new_count:]
+                async with AsyncClient() as client:
+                    for cert in to_remove:
+                        await self.delete_certificate(cert, client, session)
+        else:
+            sub_db.is_active = True
+            sub_db.end_date = self.get_end_date(
+                data_in.duration,
+                sub_db.end_date,
+            )
+            session.add(sub_db)
+        await session.commit()
+
+    async def renewal_sub(
+        self,
+        data_in: SubscriptionRenew,
+        session: AsyncSession,
+    ) -> None:
+        sub_db = await subscription_crud.get_by_id(data_in.sub_id, session)
+        if sub_db is None:
+            log_action_status(
+                action_name='Продление подписки',
+                message=f'Подписка {data_in.sub_id} не найдена!'
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=f'Подписка {data_in.sub_id} не найдена!'
+            )
+        sub_db.is_active = True
+        sub_db.end_date = self.get_end_date(data_in.duration, sub_db.end_date)
+        session.add(sub_db)
+        await session.commit()
+
+    async def get_server_and_certs(
         self,
         data_in: SubscriptionCreate,
         user: User,
         session: AsyncSession,
-    ) -> SubscriptionDB:
+    ) -> tuple[list[str], Server]:
         active_server = await self.check_active_server(
             data_in.protocol,
             data_in.region_code,
             session,
         )
         device_count = {
-            'trial': 1,
-            '2_devices': 2,
-            '4_devices': 4
+            SubscriptionType.trial: 1,
+            SubscriptionType.devices_2: 2,
+            SubscriptionType.devices_4: 4
         }.get(data_in.type, 1)
         cert_names = [uuid4().hex for _ in range(device_count)]
         log_action_status(
@@ -273,8 +457,20 @@ class SubscriptionService:
             self.request_certificate(active_server, name)
             for name in cert_names
         ]
-        # cert_links: list[str] = await asyncio.gather(*cert_tasks)
-        cert_links: list[str] = ['https://ya.ru/3']
+        cert_links = await asyncio.gather(*cert_tasks)
+        return cert_links, active_server
+
+    async def process_create(
+        self,
+        data_in: SubscriptionCreate,
+        user: User,
+        session: AsyncSession,
+    ) -> SubscriptionDB:
+        cert_links, active_server = await self.get_server_and_certs(
+            data_in,
+            user,
+            session,
+        )
         try:
             subscription = await self.create_subscription(
                 server=active_server,
@@ -300,38 +496,40 @@ class SubscriptionService:
         )
         return subs_answer
 
-    async def update_subscription(
+    async def pay_update_subscription(
         self,
-        data_in: SubscriptionRenew| SubscriptionCreate,
+        data_in: SubscriptionRenew | SubscriptionCreate,
         session: AsyncSession,
     ) -> PaymentAnswer:
         user, subs = await self.check_user_and_subscription(
             data_in.tg_id,
             session,
         )
-        subscription = next((s for s in subs if s.id == data_in.sub_id), None)
-        if subscription is None:
+        if subs is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=(f'Подписка {data_in.sub_id} не найдена у '
                         f'пользователя {data_in.tg_id}!')
             )
-        base_data = SubscriptionCreate.model_validate(subscription, update={
-            'tg_id': user.tg_id,
-            'sub_id': subscription.id,
-            # Подменяем только переданные значения (если они есть)
-            'duration': getattr(data_in, 'duration', subscription.duration),
-            'type': getattr(data_in, 'type', subscription.type),
-            'region_code': getattr(data_in, 'region_code', subscription.region.code),
-            'protocol': getattr(data_in, 'protocol', subscription.protocol),
-        })
-        return await self.create_link(base_data, user, session)
+        subscription = next((s for s in subs if s.id == data_in.sub_id), None)
+        if isinstance(data_in, SubscriptionRenew):
+            return await self.create_link(
+                data_in,
+                user,
+                session,
+                subscription.type,
+                subscription.region.code,
+            )
+        elif isinstance(data_in, SubscriptionCreate):
+            return await self.create_link(data_in, user, session)
 
     async def deactivate_subscription(
         self,
         session: AsyncSession,
     ) -> list[SubscriptionDB]:
-        expired_subs = await subscription_crud.get_expired_subscriptions(session)
+        expired_subs = await subscription_crud.get_expired_subscriptions(
+            session,
+        )
         for sub in expired_subs:
             try:
                 sub.is_active = False
@@ -339,7 +537,8 @@ class SubscriptionService:
                 await self.revoke_certificate(sub, session)
                 log_action_status(
                     action_name='Деактивация подписки',
-                    message=f'Подписка ID={sub.id} пользователя {sub.user_id} деактивирована и сертификаты удалены.'
+                    message=(f'Подписка ID={sub.id} пользователя {sub.user_id}'
+                             ' деактивирована и сертификаты удалены.')
                 )
             except Exception as e:
                 log_action_status(
@@ -349,14 +548,45 @@ class SubscriptionService:
                 )
         await session.commit()
         return expired_subs
-        
+
+    async def delete_certificate(
+        self,
+        cert: Certificate,
+        http_client: AsyncClient,
+        session: AsyncSession,
+    ) -> None:
+        # headers = {'Authorization': f'Bearer {settings.API_KEY}'}
+        headers = settings.get_headers_auth
+        parsed = urlparse(cert.filename)
+        domain = parsed.netloc
+        filename = os.path.basename(parsed.path)
+        cert_name, _ = os.path.splitext(filename)
+        url = f'https://{domain}/{SettingServers.API_CERT_HOOK}/{cert_name}'
+        response = await http_client.delete(url, headers=headers)
+        if response.status_code != 200:
+            log_action_status(
+                action_name='Ошибка удаления сертификата',
+                message=(f'Не удалось удалить сертификат {cert_name} с сервера'
+                         f' {domain}. Код ответа: {response.status_code}, '
+                         f'тело: {response.text}')
+            )
+            raise HTTPException(
+                status_code=502,
+                detail=f'Ошибка при удалении сертификата {cert_name}'
+            )
+        log_action_status(
+            action_name='Удаление сертификата',
+            message=(f'Сертификат {cert_name} успешно удален'
+                        f' на сервере {domain}')
+        )
+        await certificate_crud.delete(cert, session)
 
     async def revoke_certificate(
         self,
         subscription: Subscription,
         session: AsyncSession,
     ) -> None:
-        headers = {'Authorization': f'Bearer {settings.API_KEY}'}
+        # headers = {'Authorization': f'Bearer {settings.API_KEY}'}
         if subscription.is_active:
             raise HTTPException(
                 status_code=403,
@@ -365,23 +595,7 @@ class SubscriptionService:
         certificates = subscription.certificates
         async with AsyncClient() as client:
             for cert in certificates:
-                parsed = urlparse(cert.filename)
-                domain = parsed.netloc
-                filename = os.path.basename(parsed.path)
-                cert_name, _ = os.path.splitext(filename)
-                url = f'https://{domain}/{SettingServers.API_CERT_HOOK}/{cert_name}'
-                response = await client.delete(url, headers=headers)
-                if response.status_code != 204:
-                    log_action_status(
-                        action_name='Ошибка удаления сертификата',
-                        message=(f'Не удалось удалить сертификат {cert_name} с сервера '
-                                f'{domain}. Код ответа: {response.status_code}, тело: {response.text}')
-                    )
-                    raise HTTPException(
-                        status_code=502,
-                        detail=f'Ошибка при удалении сертификата {cert_name}'
-                    )
-                await certificate_crud.delete(cert, session)
+                await self.delete_certificate(cert, client, session)
         log_action_status(
             action_name='Удаление сертификатов',
             message=f'Удалены сертификаты по подписке {subscription.id} '
@@ -392,7 +606,15 @@ class SubscriptionService:
         tg_id: int,
         session: AsyncSession,
     ) -> list[SubscriptionDB]:
-        user, subscriptions = await self.check_user_and_subscription(tg_id, session)
+        user, subscriptions = await self.check_user_and_subscription(
+            tg_id,
+            session,
+        )
+        if subscriptions is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f'Нет подписок у пользователя {user.telegram_id}!'
+            )
         subs_answer = []
         for subscription in subscriptions:
             subs_answer.append(SubscriptionDB(
@@ -400,7 +622,8 @@ class SubscriptionService:
                 type=subscription.type,
                 region=subscription.region,
                 end_date=subscription.end_date.date(),
-                certificates=[cert.filename for cert in subscription.certificates],
+                certificates=[cert.filename
+                              for cert in subscription.certificates],
             ))
         return subs_answer
 

@@ -20,9 +20,17 @@ def check_auth():
         abort(401, description="Unauthorized")
 
 
-@app.route("/certificates/<name>", methods=["POST"])
-def create_cert(name):
+@app.route("/certificates", methods=["POST"])
+def create_cert():
     check_auth()
+
+    json_data = request.get_json()
+    name = json_data.get("name")
+    if not name:
+        return jsonify({
+            "success": False,
+            "message": "Поле 'name' обязательно"
+        }), 400
 
     result = subprocess.run(
         ["/bin/bash", SCRIPT_ADD, name],
@@ -56,9 +64,15 @@ def create_cert(name):
     }), 201
 
 
-@app.route("/certificates/<name>", methods=["DELETE"])
-def revoke_cert(name):
+@app.route("/certificates/<string:name>", methods=["DELETE"])
+def revoke_cert(name: str):
     check_auth()
+
+    if not name:
+        return jsonify({
+            "success": False,
+            "message": "Поле 'name' обязательно"
+        }), 400
 
     result = subprocess.run(
         ["/bin/bash", SCRIPT_REVOKE, name],
@@ -80,5 +94,4 @@ def revoke_cert(name):
 
 @app.route("/health", methods=["GET"])
 def health():
-    check_auth()
     return jsonify({"status": "ok"})
