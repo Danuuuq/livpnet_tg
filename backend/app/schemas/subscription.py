@@ -106,6 +106,7 @@ class SubscriptionInfoShortDB(BaseModel):
 class SubscriptionInfoDB(SubscriptionInfoShortDB):
     """Информация о подписке пользователя."""
 
+    is_active: bool = Field(description='Статус подписки')
     region: RegionDB = Field(description='Регион подписки')
 
 

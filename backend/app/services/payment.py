@@ -9,14 +9,18 @@ from yookassa.domain.exceptions import ApiError
 from app.core.config import settings
 from app.core.log_config import log_action_status
 from app.core.variables import SettingServers
-from app.crud.payment import payment_crud
+from app.crud.payment import payment_crud, referral_crud
+from app.crud.user import user_crud
 from app.models.payment import PaymentStatus
 from app.models.user import User
 from app.schemas.payment import (
     PaymentCreate,
     PaymentUpdateStatus,
+    ReferralCreate,
+    ReferralInfoOut,
+    ReferralInviteInfo,
     YouKassaStatus,
-    YooKassaWebhookNotification
+    YooKassaWebhookNotification,
 )
 from app.schemas.subscription import SubscriptionCreate
 
@@ -80,12 +84,44 @@ async def create_payment(
         return payment.confirmation.confirmation_url
 
 
+async def check_and_give_bonus(
+    user: User,
+    session: AsyncSession,
+) -> None:
+    if user.invites:
+        log_action_status(
+            action_name='Начисление бонуса',
+            message=(f'Бонус для {user.refer_from_id} уже был начислен'
+                     f' за приглашение: {user.id}'),
+        )
+        return None
+    else:
+        data_in = ReferralCreate(
+            user_id=user.refer_from_id,
+            invited_id=user.id,
+        )
+        try:
+            await referral_crud.create(data_in, session)
+        except Exception as e:
+            log_action_status(
+                error=e,
+                action_name='Начисление бонуса',
+                message=(f'Неуспешное начисление бонуса {user.refer_from_id}:'
+                         f' за приглашение: {user.id}'),
+            )
+        else:
+            log_action_status(
+                action_name='Начисление бонуса',
+                message=(f'Успешное начисление бонуса {user.refer_from_id}:'
+                         f' за приглашение: {user.id}'),
+            )
+
+
 async def check_status_from_yookassa(
     data_in: YooKassaWebhookNotification,
     session: AsyncSession,
 ):
     """Проверка статуса и присвоение рефералу бонуса."""
-    # TODO: Реализовать логику начисления бонуса рефералу
     success = (True if data_in.object.status is YouKassaStatus.succeeded
                else False)
     if data_in.object.status is YouKassaStatus.waiting_for_capture:
@@ -100,9 +136,30 @@ async def check_status_from_yookassa(
                 action_name='Оповещение о выполненной транзакции',
                 message=(
                     f'Повторное уведомление по успешному платежу {payment.id} '
-                    f'платеж уже был выполнен для юзера БД {payment.user_id}')
+                    f'для юзера {payment.user.telegram_id}')
             )
             return None, False
         upd_status = PaymentUpdateStatus(status=data_in.object.status)
         payment = await payment_crud.update(payment, upd_status, session)
+        if (not payment.user.invites and
+            payment.status == PaymentStatus.success and
+            payment.user.refer_from_id):
+            await check_and_give_bonus(payment.user, session)
         return payment, success
+
+
+async def get_bonus_info(
+    tg_id: int,
+    session: AsyncSession,
+) -> ReferralInfoOut:
+    user = await user_crud.get_by_tg_id(tg_id, session)
+    bonuses = await referral_crud.get_by_user(user.id, session)
+    available = [b for b in bonuses if not b.bonus_given]
+    withdrawn = [b for b in bonuses if b.bonus_given]
+    return ReferralInfoOut(
+        tg_id=user.telegram_id,
+        available_to_withdraw=sum(b.bonus_size for b in available),
+        available_user_count=len(available),
+        already_withdrawn=sum(b.bonus_size for b in withdrawn),
+        withdrawn_user_count=len(withdrawn),
+    )

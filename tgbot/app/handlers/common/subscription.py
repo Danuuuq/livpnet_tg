@@ -187,21 +187,21 @@ async def create_subscription(call: CallbackQuery, state: FSMContext):
                 return
             answer = await response.json()
     if data.get('type') == SubscriptionType.trial:
-            lines = []
-            region = answer.get('region').get('name', '❓Регион неизвестен')
-            end_date = answer.get('end_date', '')[:10]
-            sub_type = answer.get('type', 'неизвестно')
-            lines.append(
-                f'🔹 <b>Пробная подписка </b>\n'
-                f'Тип: {sub_type}\n'
-                f'Регион: {region}\n'
-                f'До: <b>{end_date}</b>\n'
-            )
-            subs_info = '\n'.join(lines)
-            await call.message.delete()
-            await call.message.answer(
-                CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
-                reply_markup=subscription_inline_kb())
+        lines = []
+        region = answer.get('region').get('name', '❓Регион неизвестен')
+        end_date = answer.get('end_date', '')[:10]
+        sub_type = answer.get('type', 'неизвестно')
+        lines.append(
+            f'🔹 <b>Пробная подписка </b>\n'
+            f'Тип: {sub_type}\n'
+            f'Регион: {region}\n'
+            f'До: <b>{end_date}</b>\n'
+        )
+        subs_info = '\n'.join(lines)
+        await call.message.delete()
+        await call.message.answer(
+            CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
+            reply_markup=subscription_inline_kb())
     else:
             await call.message.delete()
             await call.message.answer(

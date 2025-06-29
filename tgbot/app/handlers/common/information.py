@@ -22,40 +22,42 @@ async def get_subscription_user(call: CallbackQuery, current_user: dict):
     await call.answer(CommonMessage.LOAD_MSG_SUB, show_alert=False)
     subscriptions = current_user.get('subscription', None)
     if subscriptions:
-        lines = []
-        for idx, sub in enumerate(subscriptions, start=1):
-            region = sub.get('region').get('name', '❓Регион неизвестен')
-            end_date = sub.get('end_date', '')[:10]
-            sub_type = sub.get('type', 'неизвестно')
-            lines.append(
-                f'🔹 <b>Подписка №{idx}</b>\n'
-                f'Тип: {sub_type}\n'
-                f'Регион: {region}\n'
-                f'До: <b>{end_date}</b>\n'
-            )
-
-        subs_info = '\n'.join(lines)
         await call.message.delete()
         await call.message.answer(
-            CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
+            CommonMessage.format_start_message(
+                name=call.from_user.first_name,
+                main_menu=False,
+                subscriptions=subscriptions,
+            ),
             reply_markup=subscription_inline_kb())
     else:
         await call.message.delete()
         await call.message.answer(
-            CommonMessage.SUBSCRIPTION_WELCOME,
+            CommonMessage.format_start_message(
+                name=call.from_user.first_name,
+                main_menu=False,
+            ),
             reply_markup=subscription_inline_kb(trial=True))
 
 
 @router.callback_query(F.data == 'get_ref_url')
-async def get_ref_url(call: CallbackQuery, current_user: dict):
+async def get_ref_url(call: CallbackQuery):
     """CallBack запрос для получения реферальной ссылки."""
     await call.answer(CommonMessage.LOAD_MSG_REF, show_alert=False)
-    # TODO: Выдавать информацию пользователю о его текущем состоянии бонусов
-    # TODO: Сделать запрос к бекенду по всем рефералкам
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
+        url = (settings.get_backend_url +
+               settings.PAYMENT_PATH +
+               str(call.from_user.id))
+        async with call.bot.http_client.get(url) as response:
+            if response.status != 200:
+                await call.message.answer('Ошибка запроса состояния бонусов')
+                return
+            answer = await response.json()
         await call.message.delete()
         await call.message.answer(
-            CommonMessage.REFERRAL_MESSAGE.format(user_id=call.from_user.id),
+            CommonMessage.REFERRAL_INFO_MESSAGE.format(
+                **answer,
+            ),
             reply_markup=keys_inline_kb())
 
 

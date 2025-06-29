@@ -37,6 +37,41 @@ class PaymentCreate(BaseModel):
     )
 
 
+class ReferralCreate(BaseModel):
+    """Схема для создания бонуса для реферала."""
+
+    user_id: int = Field(description='ID кому бонус за приглашение')
+    invited_id: int = Field(description='ID кого пригласил')
+
+
+class ReferralInviteInfo(BaseModel):
+    """Схема по тому кого пригласил клиент."""
+
+    invited_id: int = Field(description='ID приглашённого пользователя')
+    bonus_given: bool = Field(description='Выплачен ли бонус')
+    bonus_size: Decimal = Field(description='Размер бонуса')
+
+
+class ReferralInfoOut(BaseModel):
+    """Схема для всех начислений клиенту."""
+
+    tg_id: int = Field(
+        description='Телеграм ID пользователя (получателя бонусов)',
+    )
+    available_to_withdraw: Decimal = Field(
+        description='Сумма, доступная к выводу (в рублях)'
+    )
+    available_user_count: int = Field(
+        description='Количество приглашённых, за которых доступен бонус'
+    )
+    already_withdrawn: Decimal = Field(
+        description='Сумма уже выведенных бонусов (в рублях)'
+    )
+    withdrawn_user_count: int = Field(
+        description='Количество приглашённых, за которых бонус уже был выведен'
+    )
+
+
 class PaymentUpdateStatus(BaseModel):
     """Схема для создания платежа."""
 

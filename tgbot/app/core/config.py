@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     BACKEND_PORT: int
     AUTH_PATH: str = '/auth/'
     SERVER_PATH: str = '/server/active'
+    PAYMENT_PATH: str = '/payment/'
     SUBSCRIPTION_PATH: str = '/subscription/'
     PRICE_PATH: str = 'price'
 

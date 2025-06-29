@@ -62,7 +62,6 @@ class SubscriptionService:
         name: str,
     ) -> str:
         """Отправка запроса на генерацию сертификата."""
-        # headers = {'Authorization': f'Bearer {settings.API_KEY}'}
         headers = settings.get_headers_auth
         url = (f'https://{active_server.domain_name}'
                f'/{SettingServers.API_CERT_HOOK}')
@@ -180,8 +179,7 @@ class SubscriptionService:
                         f'регион {region_code}')
             )
         active_server = None
-        # headers = {'Authorization': f'Bearer {settings.API_KEY}'}
-        headers = settings.get_headers_auth_auth
+        headers = settings.get_headers_auth
         for check_server in active_servers:
             url = (f'https://{check_server.domain_name}'
                    f'/{SettingServers.API_CHECK_HEALTH}')
@@ -488,6 +486,7 @@ class SubscriptionService:
             )
             raise
         subs_answer = SubscriptionDB(
+            is_active=subscription.is_active,
             id=subscription.id,
             region=subscription.region,
             type=subscription.type,
@@ -555,7 +554,6 @@ class SubscriptionService:
         http_client: AsyncClient,
         session: AsyncSession,
     ) -> None:
-        # headers = {'Authorization': f'Bearer {settings.API_KEY}'}
         headers = settings.get_headers_auth
         parsed = urlparse(cert.filename)
         domain = parsed.netloc
@@ -586,7 +584,6 @@ class SubscriptionService:
         subscription: Subscription,
         session: AsyncSession,
     ) -> None:
-        # headers = {'Authorization': f'Bearer {settings.API_KEY}'}
         if subscription.is_active:
             raise HTTPException(
                 status_code=403,
@@ -618,6 +615,7 @@ class SubscriptionService:
         subs_answer = []
         for subscription in subscriptions:
             subs_answer.append(SubscriptionDB(
+                is_active=subscription.is_active,
                 id=subscription.id,
                 type=subscription.type,
                 region=subscription.region,
