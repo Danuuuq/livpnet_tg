@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, model_validator
 
 from app.core.variables import SettingFieldDB
 from app.models.server import VPNProtocol
@@ -92,22 +92,51 @@ class SubscriptionRenew(BaseModel):
 #     model_config = ConfigDict(from_attributes=True)
 
 
-class SubscriptionInfoShortDB(BaseModel):
+class SubscriptionNotifyDB(BaseModel):
+    """Информация о подписке пользователя."""
+
+    # id: int = Field(description='ID подписки')
+    type: SubscriptionType = Field(
+        description='Тип подписки: количество устройств')
+    region: str = Field(description='Регион подписки')
+    protocol: VPNProtocol | None = Field(
+        default=None,
+        description='Протокол подписки',
+    )
+    # end_date: datetime = Field(description='Дата окончания')
+    telegram_id: int | None = Field(
+        default=None,
+        description='Телеграм id клиента',
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SubscriptionInfoShortDB(SubscriptionNotifyDB):
     """Информация о подписке пользователя."""
 
     id: int = Field(description='ID подписки')
-    type: SubscriptionType = Field(
-        description='Тип подписки: количество устройств')
+    # type: SubscriptionType = Field(
+    #     description='Тип подписки: количество устройств')
+    region: RegionDB = Field(description='Регион подписки')
+    # protocol: VPNProtocol | None = Field(
+    #     default=None,
+    #     description='Протокол подписки',
+    # )
     end_date: datetime = Field(description='Дата окончания')
+    # telegram_id: int | None = Field(
+    #     default=None,
+    #     description='Телеграм id клиента',
+    # )
 
-    model_config = ConfigDict(from_attributes=True)
+    # model_config = ConfigDict(from_attributes=True)
 
 
 class SubscriptionInfoDB(SubscriptionInfoShortDB):
     """Информация о подписке пользователя."""
 
     is_active: bool = Field(description='Статус подписки')
-    region: RegionDB = Field(description='Регион подписки')
+    # region: RegionDB = Field(description='Регион подписки')
 
 
 class SubscriptionDB(SubscriptionInfoDB):
@@ -122,6 +151,7 @@ class SubscriptionCreateDB(BaseModel):
     user_id: int = Field(description='ID пользователя')
     region_id: int = Field(description='ID региона')
     type: SubscriptionType = Field(description='Тип подписки')
+    protocol: VPNProtocol = Field(description='Протокол подписки')
     is_active: bool = Field(default=True, description='Активна ли подписка')
     end_date: datetime = Field(description='Дата окончания подписки')
 

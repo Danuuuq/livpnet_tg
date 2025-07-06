@@ -20,6 +20,16 @@ class SubscriptionDuration(str, enum.Enum):
     year_1 = "1 год"
 
 
+class SubscriptionNotifyDB(BaseModel):
+    """Информация о подписке пользователя."""
+
+    type: SubscriptionType = Field(
+        description='Тип подписки: количество устройств')
+    region: str = Field(description='Регион подписки')
+    protocol: VPNProtocol = Field(description='Протокол подписки')
+    telegram_id: int = Field(description='Телеграм id клиента')
+
+
 class SubscriptionCreate(BaseModel):
     """Схема данных при оформлении подписки из Telegram."""
 

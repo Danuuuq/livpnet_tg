@@ -1,0 +1,1 @@
+from .notify import router as notify_router # noqa

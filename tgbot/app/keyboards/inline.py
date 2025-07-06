@@ -145,9 +145,7 @@ def keys_inline_kb(
     subscriptions: list[str] | None = None,
 ) -> InlineKeyboardMarkup:
     """Инлайн клавиатура в ключах и информационных блоках."""
-    
     inline_kb_list = []
-
     if subscriptions:
         for subscription in subscriptions:
             if subscription.get("certificates"):
@@ -158,7 +156,6 @@ def keys_inline_kb(
                             url=certificate
                         )
                     ])
-        
         inline_kb_list += [
             [InlineKeyboardButton(text=Keyboards.HELP,
                                   callback_data='get_help')],

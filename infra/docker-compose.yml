@@ -1,7 +1,9 @@
 volumes:
   livpnet_data:
+  livpnet_redis:
 
 services:
+
   database:
     image: postgres:17-alpine
     container_name: db_livpnet
@@ -12,23 +14,63 @@ services:
       - "${DB_PORT}:5432"
     restart: unless-stopped
 
+  # redis:
+  #   image: redis:7
+  #   container_name: redis_livpnet
+  #   volumes:
+  #     - livpnet_redis:/data
+  #   env_file: .env
+  #   ports:
+  #     - "${REDIS_PORT}:6379"
+  #   command: >
+  #     sh -c '
+  #       mkdir -p /usr/local/etc/redis &&
+  #       echo "bind 0.0.0.0" > /usr/local/etc/redis/redis.conf &&
+  #       echo "requirepass $REDIS_PASSWORD" >> /usr/local/etc/redis/redis.conf &&
+  #       echo "appendonly yes" >> /usr/local/etc/redis/redis.conf &&
+  #       echo "appendfsync everysec" >> /usr/local/etc/redis/redis.conf &&
+  #       echo "user default on nopass ~* +@all" > /usr/local/etc/redis/users.acl &&
+  #       echo "user $REDIS_USER on >$REDIS_USER_PASSWORD ~* +@all" >> /usr/local/etc/redis/users.acl &&
+  #       redis-server /usr/local/etc/redis/redis.conf --aclfile /usr/local/etc/redis/users.acl
+  #     '
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.50'
+  #         memory: 512M
+  #       reservations:
+  #         cpus: '0.25'
+  #         memory: 256M
+  #   restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    hostname: rabbitmq_livpnet
+    env_file: .env
+    ports:
+      - "${RABBIT_PORT_WEB}:15672"
+      - "${RABBIT_PORT_AMQP}:5672"
+    restart: unless-stopped
+
   # backend:
-  #   build: ./backend
+  #   build: ../backend
   #   container_name: backend_livpnet
   #   volumes:
   #     - ./logs:/app/logs
-  #     - uploads_attaches:/app/uploads_attaches
   #   env_file: .env
   #   restart: unless-stopped
   #   depends_on:
   #     - database
   #   ports:
-  #     - "${APP_PORT}:${APP_PORT}"
+  #     - "${BACKEND_PORT}:${BACKEND_PORT}"
 
   # tgbot:
-  #   build: ./tgbot
+  #   build: ../tgbot
   #   container_name: tgbot_livpnet
   #   env_file: .env
   #   ports:
-  #     - 9184:9184
+  #     - "${TG_PORT}:${TG_PORT}"
+  #   depends_on:
+  #     - database
+  #     - backend
   #   restart: unless-stopped

@@ -1,0 +1,77 @@
+volumes:
+  livpnet_data:
+
+networks:
+  livpnet_network:
+    driver: bridge
+
+services:
+
+  database:
+    image: postgres:17-alpine
+    container_name: db_livpnet
+    env_file: .env.prod
+    volumes:
+      - livpnet_data:/var/lib/postgresql/vpn_data
+    restart: unless-stopped
+    networks:
+      - livpnet_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    hostname: rabbitmq_livpnet
+    env_file: .env.prod
+    depends_on:
+      - database
+    restart: unless-stopped
+    networks:
+      - livpnet_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build: ../backend
+    container_name: backend_livpnet
+    volumes:
+      - ./logs:/app/logs
+    env_file: .env.prod
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - livpnet_network
+
+  tgbot:
+    build: ../tgbot
+    container_name: tgbot_livpnet
+    env_file: .env.prod
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - livpnet_network
+
+  nginx:
+    build: ../nginx
+    ports:
+      - "9428:80"
+    depends_on:
+      - backend
+    networks:
+      - livpnet_network

@@ -4,9 +4,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.crud.base import CRUDBase
+from app.crud.base import CRUDBase, CreateSchemaType
 from app.core.database import commit_change
 from app.models.server import Region, Server, Certificate
+from app.schemas.subscription import CertificateCreateDB
 
 
 class CRUDServer(CRUDBase):
@@ -87,4 +88,38 @@ class CRUDServer(CRUDBase):
 
 
 server_crud = CRUDServer(Server)
-certificate_crud = CRUDBase(Certificate)
+
+
+class CRUDCertificate(CRUDBase):
+    """CRUD операции для модели с сертификатами."""
+
+    async def create(
+        self,
+        obj_in: CertificateCreateDB,
+        session: AsyncSession,
+    ) -> Certificate | None:
+        """Создание объекта сертификата."""
+        db_obj = self.model(**obj_in.model_dump())
+        session.add(db_obj)
+        server = await server_crud.get_by_id(obj_in.server_id, session)
+        if server:
+            server.current_cert_count += 1
+            session.add(server)
+        return await commit_change(session, db_obj)
+
+    async def delete(
+        self,
+        db_obj: Certificate,
+        session: AsyncSession,
+    ) -> Certificate:
+        """Удаление объекта модели."""
+        server = await server_crud.get_by_id(db_obj.server_id, session)
+        if server and server.current_cert_count > 0:
+            server.current_cert_count -= 1
+            session.add(server)
+        await session.delete(db_obj)
+        await commit_change(session)
+        return db_obj
+
+
+certificate_crud = CRUDCertificate(Certificate)

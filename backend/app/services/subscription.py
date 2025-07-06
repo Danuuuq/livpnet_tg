@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 from fastapi import HTTPException, status
+from faststream.rabbit.fastapi import RabbitRouter
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,6 +31,7 @@ from app.schemas.subscription import (
     SubscriptionCreateDB,
     SubscriptionRenew,
     SubscriptionUpdate,
+    SubscriptionNotifyDB,
 )
 from app.services.payment import create_payment
 
@@ -119,6 +121,7 @@ class SubscriptionService:
             user_id=user.id,
             region_id=server.region_id,
             type=subscription_type,
+            protocol=server.protocol,
             is_active=True,
             end_date=self.get_end_date(subscription_duration),
         )
@@ -363,16 +366,23 @@ class SubscriptionService:
             )
 
         elif type_changed:
-            server = await server_crud.get_by_id(
-                sub_db.certificates[0].server_id,
-                session,
-            )
+            if sub_db.certificates:
+                server = await server_crud.get_by_id(
+                    sub_db.certificates[0].server_id,
+                    session,
+                )
+            else:
+                server = await self.check_active_server(
+                    sub_db.protocol,
+                    sub_db.region.code,
+                    session,
+                )
             device_count = {
                 SubscriptionType.trial: 1,
                 SubscriptionType.devices_2: 2,
                 SubscriptionType.devices_4: 4
             }
-            old_count = device_count.get(sub_db.type, 1)
+            old_count = len(sub_db.certificates)
             new_count = device_count.get(data_in.type, 1)
             sub_db.is_active = True
             sub_db.end_date = self.get_end_date(
@@ -401,6 +411,29 @@ class SubscriptionService:
                     for cert in to_remove:
                         await self.delete_certificate(cert, client, session)
         else:
+            if not sub_db.certificates:
+                device_count = {
+                    SubscriptionType.trial: 1,
+                    SubscriptionType.devices_2: 2,
+                    SubscriptionType.devices_4: 4
+                }
+                server = await self.check_active_server(
+                    sub_db.protocol,
+                    sub_db.region.code,
+                    session,
+                )
+                cert_names = [uuid4().hex for _ in range(device_count.get(sub_db.type, 1))]
+                cert_tasks = [
+                    self.request_certificate(server, name)
+                    for name in cert_names
+                ]
+                cert_links = await asyncio.gather(*cert_tasks)
+                await self.create_cert_in_db(
+                    server,
+                    cert_links,
+                    sub_db,
+                    session,
+                )
             sub_db.is_active = True
             sub_db.end_date = self.get_end_date(
                 data_in.duration,
@@ -423,6 +456,30 @@ class SubscriptionService:
             raise HTTPException(
                 status_code=404,
                 detail=f'Подписка {data_in.sub_id} не найдена!'
+            )
+
+        if not sub_db.certificates:
+            device_count = {
+                SubscriptionType.trial: 1,
+                SubscriptionType.devices_2: 2,
+                SubscriptionType.devices_4: 4
+            }
+            server = await self.check_active_server(
+                sub_db.protocol,
+                sub_db.region.code,
+                session,
+            )
+            cert_names = [uuid4().hex for _ in range(device_count.get(sub_db.type, 1))]
+            cert_tasks = [
+                self.request_certificate(server, name)
+                for name in cert_names
+            ]
+            cert_links = await asyncio.gather(*cert_tasks)
+            await self.create_cert_in_db(
+                server,
+                cert_links,
+                sub_db,
+                session,
             )
         sub_db.is_active = True
         sub_db.end_date = self.get_end_date(data_in.duration, sub_db.end_date)
@@ -522,11 +579,15 @@ class SubscriptionService:
         elif isinstance(data_in, SubscriptionCreate):
             return await self.create_link(data_in, user, session)
 
-    async def deactivate_subscription(
+    async def notify_about_subs(
         self,
         session: AsyncSession,
-    ) -> list[SubscriptionDB]:
-        expired_subs = await subscription_crud.get_expired_subscriptions(
+        router: RabbitRouter,
+    ) -> None:
+        expired_subs = await subscription_crud.get_expired_subs(
+            session,
+        )
+        expiring_subs = await subscription_crud.get_expiring_subs(
             session,
         )
         for sub in expired_subs:
@@ -545,8 +606,36 @@ class SubscriptionService:
                     error=e,
                     message=f'Не удалось обработать подписку ID={sub.id}'
                 )
+            else:
+                log_action_status(
+                    action_name='Создание задачи',
+                    message=(f'Уведомление {sub.user.telegram_id} '
+                             'об отключении подписки ID={sub.id}.')
+                )
+                await router.broker.publish(
+                    message=SubscriptionNotifyDB(
+                        type=sub.type,
+                        region=sub.region.name,
+                        protocol=sub.protocol,
+                        telegram_id=sub.user.telegram_id),
+                    queue='notify_deactivate_sub',
+                )
+        for sub in expiring_subs:
+            log_action_status(
+                action_name='Создание задачи',
+                message=(f'Уведомление {sub.user.telegram_id} '
+                         'об окончании подписки ID={sub.id}.')
+            )
+            await router.broker.publish(
+                message=SubscriptionNotifyDB(
+                    type=sub.type,
+                    region=sub.region.name,
+                    protocol=sub.protocol,
+                    telegram_id=sub.user.telegram_id),
+                queue='notify_end_sub',
+            )
         await session.commit()
-        return expired_subs
+        return None
 
     async def delete_certificate(
         self,

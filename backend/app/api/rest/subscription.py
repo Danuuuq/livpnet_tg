@@ -8,7 +8,6 @@ from app.schemas.payment import PaymentAnswer, YooKassaWebhookNotification
 from app.schemas.subscription import (
     PriceDB,
     SubscriptionDB,
-    SubscriptionInfoShortDB,
     SubscriptionCreate,
     SubscriptionRenew,
 )
@@ -76,17 +75,18 @@ async def webhook_payment_status(
         await subscription_service.action_after_payment(payment, session)
 
 
-@router.delete(
-    '',
-    response_model=list[SubscriptionInfoShortDB],
-    summary='Деактивация подписок',
-    response_description='Деактивация неоплаченных подписок',
-)
-async def delete_subscriptions(
-    session: AsyncSession = Depends(get_async_session),
-) -> list[SubscriptionInfoShortDB]:
-    """Деактивация неоплаченных подписок и удаление сертификатов."""
-    return await subscription_service.deactivate_subscription(session)
+# @router.delete(
+#     '',
+#     summary='Деактивация подписок и уведомление клиентов',
+#     response_description=(
+#         'Деактивация неоплаченных подписок и уведомление клиентов'
+#         ' об окончании скорейшем.'),
+# )
+# async def delete_subscriptions(
+#     session: AsyncSession = Depends(get_async_session),
+# ):
+#     """Деактивация подписок и уведомление об окончании."""
+#     return await subscription_service.notify_about_subs(session)
 
 
 @router.get(
@@ -120,20 +120,20 @@ async def update_subscription(
     )
 
 
-@router.delete(
-    '/{tg_id}/{sub_id}',
-    response_model=SubscriptionDB,
-    summary='Удаление сертификатов подписки пользователя',
-    response_description='Удаление сертификатов пользователя',
-)
-async def delete_subs_user(
-    tg_id: int,
-    sub_id: int,
-    session: AsyncSession = Depends(get_async_session),
-) -> SubscriptionDB:
-    """Удаление/аннулирование сертификатов пользователя."""
-    return await subscription_service.revoke_certificate(
-        tg_id,
-        sub_id,
-        session,
-    )
+# @router.delete(
+#     '/{tg_id}/{sub_id}',
+#     response_model=SubscriptionDB,
+#     summary='Удаление сертификатов подписки пользователя',
+#     response_description='Удаление сертификатов пользователя',
+# )
+# async def delete_subs_user(
+#     tg_id: int,
+#     sub_id: int,
+#     session: AsyncSession = Depends(get_async_session),
+# ) -> SubscriptionDB:
+#     """Удаление/аннулирование сертификатов пользователя."""
+#     return await subscription_service.revoke_certificate(
+#         tg_id,
+#         sub_id,
+#         session,
+#     )

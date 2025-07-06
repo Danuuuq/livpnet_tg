@@ -15,6 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.core.variables import SettingFieldDB
+from app.models.server import VPNProtocol
 
 if TYPE_CHECKING:
     from app.models.server import Certificate, Region
@@ -38,6 +39,10 @@ class Subscription(Base):
 
     type: Mapped[SubscriptionType] = mapped_column(
         Enum(SubscriptionType),
+        nullable=False,
+    )
+    protocol: Mapped[VPNProtocol] = mapped_column(
+        Enum(VPNProtocol),
         nullable=False,
     )
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)

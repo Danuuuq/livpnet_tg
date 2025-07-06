@@ -60,6 +60,7 @@ def upgrade() -> None:
     )
     op.create_table('subscription',
     sa.Column('type', sa.Enum('trial', 'devices_2', 'devices_4', name='subscriptiontype'), nullable=False),
+    sa.Column('protocol', sa.Enum('openvpn', 'vless', name='vpnprotocol'), nullable=False),
     sa.Column('end_date', sa.DateTime(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('region_id', sa.BigInteger(), nullable=True),
@@ -106,6 +107,7 @@ def upgrade() -> None:
     sa.Column('id', sa.BigInteger(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('intent_data', sa.JSON(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('operation_id')

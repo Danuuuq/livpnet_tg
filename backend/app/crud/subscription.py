@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -41,7 +41,7 @@ class CRUDSubscription(CRUDBase):
         )
         return db_obj.scalars().first()
 
-    async def get_expired_subscriptions(
+    async def get_expired_subs(
         self,
         session: AsyncSession,
     ) -> list[Subscription]:
@@ -50,7 +50,10 @@ class CRUDSubscription(CRUDBase):
 
         db_obj = await session.execute(
             select(self.model)
-            .options(selectinload(self.model.certificates))
+            .options(
+                selectinload(self.model.certificates),
+                selectinload(self.model.user),
+                selectinload(self.model.region))
             .where(
                 self.model.end_date < today,
                 self.model.is_active.is_(True),
@@ -58,21 +61,24 @@ class CRUDSubscription(CRUDBase):
         )
         return db_obj.unique().scalars().all()
 
-    async def get_subscriptions_expiring_tomorrow(
+    async def get_expiring_subs(
         self,
         session: AsyncSession,
     ) -> list[Subscription]:
         """Получить подписки, срок которых истекает завтра."""
-        tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).date()
+        today = datetime.now(timezone.utc).date()
 
         db_obj = await session.execute(
             select(self.model)
+            .options(
+                selectinload(self.model.user),
+                selectinload(self.model.region))
             .where(
-                self.model.end_date == tomorrow,
+                func.date(self.model.end_date) == today,
                 self.model.is_active.is_(True),
             )
         )
-        return db_obj.scalars().all()
+        return db_obj.unique().scalars().all()
 
 
 class CRUDPrice(CRUDBase):
