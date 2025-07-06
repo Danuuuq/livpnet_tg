@@ -1,7 +1,6 @@
-import os
-
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     """Класс для базовых настроек приложения."""
@@ -11,6 +10,7 @@ class Settings(BaseSettings):
     SERIALIZER_FORMAT: str = 'json'
     NOTIFY_PATH: str = 'notify'
     SUBSCRIPTION_PATH: str = 'subs'
+    LOG_DIR: str = 'logs'
     MAX_RETRIES: int = 3
     DEF_RETRY_DELAY: int = 5
     TG_HOST: str
@@ -24,14 +24,13 @@ class Settings(BaseSettings):
     RABBIT_PORT_AMQP: int
 
     model_config = SettingsConfigDict(
-        env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              '../../infra', '.env'),
         env_file_encoding='utf-8',
-        extra='ignore')
+        extra='ignore',
+    )
 
     @property
     def get_backend_url(self) -> str:
-        """Ссылка для подключения к redis."""
+        """Ссылка для подключения к backend."""
         return (f'http://{self.BACKEND_HOST}:{self.BACKEND_PORT}')
 
     @property

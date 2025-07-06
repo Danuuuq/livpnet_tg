@@ -1,3 +1,5 @@
+import asyncio
+
 from aiohttp import web
 from aiogram.webhook.aiohttp_server import (
     SimpleRequestHandler,
@@ -26,7 +28,7 @@ async def on_shutdown() -> None:
     await bot.session.close()
 
 
-async def main():
+def main():
     """Запуск приложения с ботом."""
 
     dp.startup.register(on_startup)
@@ -39,7 +41,7 @@ async def main():
     )
     webhook_requests_handler.register(app, path=settings.WEBHOOK_PATH)
     setup_application(app, dp, bot=bot)
-    web.run_app(app, host=settings.APP_HOST, port=settings.APP_PORT)
+    web.run_app(app, host=settings.TG_HOST, port=settings.TG_PORT)
 
 
 if __name__ == '__main__':

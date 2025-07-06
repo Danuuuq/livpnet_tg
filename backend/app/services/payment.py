@@ -18,7 +18,6 @@ from app.schemas.payment import (
     PaymentUpdateStatus,
     ReferralCreate,
     ReferralInfoOut,
-    ReferralInviteInfo,
     YouKassaStatus,
     YooKassaWebhookNotification,
 )

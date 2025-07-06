@@ -13,7 +13,6 @@ from app.keyboards.inline import (
     choice_sub_inline_kb,
     choice_subscription_inline_kb,
     choice_type_inline_kb,
-    keys_inline_kb,
     payment_kb,
     subscription_inline_kb,
 )

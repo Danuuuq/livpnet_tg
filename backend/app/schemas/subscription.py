@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.core.variables import SettingFieldDB
 from app.models.server import VPNProtocol

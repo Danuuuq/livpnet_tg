@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.crud.base import CRUDBase, CreateSchemaType
+from app.crud.base import CRUDBase
 from app.core.database import commit_change
 from app.models.server import Region, Server, Certificate
 from app.schemas.subscription import CertificateCreateDB

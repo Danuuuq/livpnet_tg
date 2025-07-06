@@ -1,10 +1,6 @@
 volumes:
   livpnet_data:
 
-networks:
-  livpnet_network:
-    driver: bridge
-
 services:
 
   database:
@@ -14,8 +10,6 @@ services:
     volumes:
       - livpnet_data:/var/lib/postgresql/vpn_data
     restart: unless-stopped
-    networks:
-      - livpnet_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 10s
@@ -30,8 +24,6 @@ services:
     depends_on:
       - database
     restart: unless-stopped
-    networks:
-      - livpnet_network
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
@@ -43,7 +35,7 @@ services:
     build: ../backend
     container_name: backend_livpnet
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app/logs/backend
     env_file: .env.prod
     restart: unless-stopped
     depends_on:
@@ -51,8 +43,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    networks:
-      - livpnet_network
 
   tgbot:
     build: ../tgbot
@@ -64,14 +54,35 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
-    networks:
-      - livpnet_network
+
+  celery_worker:
+    build:
+      context: ../cron_celery
+      dockerfile: Dockerfile.celery.worker
+    env_file: .env.prod
+    volumes:
+      - ./logs:/app/logs/celery
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: ../cron_celery
+      dockerfile: Dockerfile.celery.beat
+    env_file: .env.prod
+    volumes:
+      - .logs_celery.log:/app/logs/celery
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
 
   nginx:
     build: ../nginx
     ports:
-      - "9428:80"
+      - "8000:80"
     depends_on:
       - backend
-    networks:
-      - livpnet_network
+    restart: unless-stopped
