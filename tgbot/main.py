@@ -1,6 +1,6 @@
 import asyncio
 
-from aiohttp import web
+from aiohttp import ClientSession, web
 from aiogram.webhook.aiohttp_server import (
     SimpleRequestHandler,
     setup_application
@@ -17,6 +17,7 @@ async def on_startup() -> None:
     """Действия при запуске бота."""
     await set_commands()
     await broker.start()
+    bot.http_client = ClientSession()
     await bot.set_webhook(settings.get_webhook_url,
                           secret_token=settings.WEBHOOK_SECRET)
 
@@ -25,6 +26,7 @@ async def on_shutdown() -> None:
     """Действия при остановке бота."""
     await broker.stop()
     await bot.delete_webhook(drop_pending_updates=True)
+    await bot.http_client.close()
     await bot.session.close()
 
 
