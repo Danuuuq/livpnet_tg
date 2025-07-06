@@ -9,16 +9,10 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# @after_setup_logger.connect
-# def setup_loggers(logger, *args, **kwargs):
-#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#     fh = logging.FileHandler('logs_celery.log')
-#     fh.setFormatter(formatter)
-#     logger.addHandler(fh)
-
 
 @after_setup_logger.connect
 def setup_loggers(logger, *args, **kwargs):
+    os.makedirs(settings.LOG_DIR, exist_ok=True)
     log_filename = os.path.join(
         settings.LOG_DIR,
         f'celery_{datetime.now().date()}.log',
