@@ -110,7 +110,6 @@ class YooKassaWebhookObject(BaseModel):
 
 
 class YooKassaWebhookNotification(BaseModel):
-    # TODO: Разобраться с ошибкой перегрузки Mypy
     type: str = Field(description="Тип уведомления", example="notification")
     event: str = Field(description="Событие", example="payment.waiting_for_capture")
     object: YooKassaWebhookObject

@@ -10,9 +10,6 @@ services:
     volumes:
       - livpnet_data:/var/lib/postgresql/vpn_data
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -64,7 +61,7 @@ services:
       dockerfile: Dockerfile.celery.worker
     env_file: .env.prod
     volumes:
-      - ./logs/celery:/logs
+      - ./logs/celery:/app/logs
     depends_on:
       rabbitmq:
         condition: service_healthy

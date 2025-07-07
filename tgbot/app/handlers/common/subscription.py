@@ -91,7 +91,6 @@ async def choice_subscription(
 async def new_subscription(
     call: CallbackQuery,
     state: FSMContext,
-    # current_user: dict,
 ):
     """CallBack запрос для выбора подписки, только обновление."""
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):

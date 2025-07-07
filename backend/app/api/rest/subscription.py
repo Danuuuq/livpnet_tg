@@ -61,7 +61,7 @@ async def create_subscription(
 
 
 @router.post(
-    '/answer',
+    '/yookassa',
     summary='Webhook для ю.кассы',
     response_description='Ожидание ответа от ю.кассы об оплате.',
 )
@@ -73,20 +73,6 @@ async def webhook_payment_status(
     payment, success = await check_status_from_yookassa(data_in, session)
     if success:
         await subscription_service.action_after_payment(payment, session)
-
-
-# @router.delete(
-#     '',
-#     summary='Деактивация подписок и уведомление клиентов',
-#     response_description=(
-#         'Деактивация неоплаченных подписок и уведомление клиентов'
-#         ' об окончании скорейшем.'),
-# )
-# async def delete_subscriptions(
-#     session: AsyncSession = Depends(get_async_session),
-# ):
-#     """Деактивация подписок и уведомление об окончании."""
-#     return await subscription_service.notify_about_subs(session)
 
 
 @router.get(
@@ -118,22 +104,3 @@ async def update_subscription(
         data_in,
         session,
     )
-
-
-# @router.delete(
-#     '/{tg_id}/{sub_id}',
-#     response_model=SubscriptionDB,
-#     summary='Удаление сертификатов подписки пользователя',
-#     response_description='Удаление сертификатов пользователя',
-# )
-# async def delete_subs_user(
-#     tg_id: int,
-#     sub_id: int,
-#     session: AsyncSession = Depends(get_async_session),
-# ) -> SubscriptionDB:
-#     """Удаление/аннулирование сертификатов пользователя."""
-#     return await subscription_service.revoke_certificate(
-#         tg_id,
-#         sub_id,
-#         session,
-#     )

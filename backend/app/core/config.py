@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     RABBIT_HOST: str
     RABBIT_PORT_WEB: int
     RABBIT_PORT_AMQP: int
+    ALLOWED_IP_YOOKASSA: list[str]
 
     model_config = SettingsConfigDict(
         env_file_encoding='utf-8',

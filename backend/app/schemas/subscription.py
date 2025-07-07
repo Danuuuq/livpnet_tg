@@ -84,18 +84,9 @@ class SubscriptionRenew(BaseModel):
     )
 
 
-# class RegionShort(BaseModel):
-#     """Короткая информация о регионе."""
-#     code: str = Field(description='Код региона (ISO)')
-#     name: str = Field(description='Название региона')
-
-#     model_config = ConfigDict(from_attributes=True)
-
-
 class SubscriptionNotifyDB(BaseModel):
     """Информация о подписке пользователя."""
 
-    # id: int = Field(description='ID подписки')
     type: SubscriptionType = Field(
         description='Тип подписки: количество устройств')
     region: str = Field(description='Регион подписки')
@@ -103,7 +94,6 @@ class SubscriptionNotifyDB(BaseModel):
         default=None,
         description='Протокол подписки',
     )
-    # end_date: datetime = Field(description='Дата окончания')
     telegram_id: int | None = Field(
         default=None,
         description='Телеграм id клиента',
@@ -116,27 +106,14 @@ class SubscriptionInfoShortDB(SubscriptionNotifyDB):
     """Информация о подписке пользователя."""
 
     id: int = Field(description='ID подписки')
-    # type: SubscriptionType = Field(
-    #     description='Тип подписки: количество устройств')
     region: RegionDB = Field(description='Регион подписки')
-    # protocol: VPNProtocol | None = Field(
-    #     default=None,
-    #     description='Протокол подписки',
-    # )
     end_date: datetime = Field(description='Дата окончания')
-    # telegram_id: int | None = Field(
-    #     default=None,
-    #     description='Телеграм id клиента',
-    # )
-
-    # model_config = ConfigDict(from_attributes=True)
 
 
 class SubscriptionInfoDB(SubscriptionInfoShortDB):
     """Информация о подписке пользователя."""
 
     is_active: bool = Field(description='Статус подписки')
-    # region: RegionDB = Field(description='Регион подписки')
 
 
 class SubscriptionDB(SubscriptionInfoDB):

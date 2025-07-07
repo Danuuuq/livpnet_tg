@@ -707,6 +707,7 @@ class SubscriptionService:
                 is_active=subscription.is_active,
                 id=subscription.id,
                 type=subscription.type,
+                protocol=subscription.protocol,
                 region=subscription.region,
                 end_date=subscription.end_date.date(),
                 certificates=[cert.filename

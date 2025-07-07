@@ -10,3 +10,5 @@ yookassa==3.5.0
 uvicorn==0.34.3
 redis==6.2.0
 faststream[rabbit]==0.5.44
+# TEST
+ipaddress==1.0.23

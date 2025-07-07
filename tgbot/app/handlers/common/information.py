@@ -9,8 +9,10 @@ from app.forms.subscription import SupportForm
 from app.keyboards.inline import (
     device_inline_kb,
     keys_inline_kb,
+    keys_referral_kb,
     protocol_inline_kb,
-    subscription_inline_kb)
+    subscription_inline_kb,
+)
 from app.messages.common import CommonMessage
 
 router = Router()
@@ -58,7 +60,7 @@ async def get_ref_url(call: CallbackQuery):
             CommonMessage.REFERRAL_INFO_MESSAGE.format(
                 **answer,
             ),
-            reply_markup=keys_inline_kb())
+            reply_markup=keys_referral_kb())
 
 
 @router.callback_query(F.data == 'get_price')

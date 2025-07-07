@@ -1,21 +1,23 @@
 import os
 
+from alembic import command
+from alembic.config import Config
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp
 
-from alembic import command
-from alembic.config import Config
 from app.api.routers import main_router
 from app.core.config import settings
 from app.core.log_config import app_logger
+from app.middlewares.ip_access import IPWhitelistMiddleware
 
 
 app = FastAPI(title=settings.APP_TITLE,
               description=settings.APP_DESCRIPTION,
               )
 
+app.add_middleware(IPWhitelistMiddleware)
 
 @app.middleware('http')
 async def add_logging_context(
