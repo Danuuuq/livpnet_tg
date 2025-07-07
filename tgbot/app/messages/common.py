@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+
 class CommonMessage:
     """Общие сообщения: приветствия, FAQ и др."""
 
@@ -71,10 +72,10 @@ class CommonMessage:
     )
     URL_WITH_HELP = {
         'openvpn': {
-            'windows': 'https://telegra.ph/OpenVPN-na-Windows-05-17',
-            'macos': 'https://telegra.ph/OpenVPN-na-MacOS-05-17',
-            'android': 'https://telegra.ph/OpenVPN-na-Android-05-17',
-            'iphone': 'https://telegra.ph/OpenVPN-na-Iphone-05-17'
+            'windows': 'https://telegra.ph/Instrukciya-po-podklyucheniyu-k-OpenVPN-na-Windows-s-ispolzovaniem-klyuchej-07-07',
+            'macos': 'https://telegra.ph/Instrukciya-po-podklyucheniyu-k-OpenVPN-na-macOS-s-ispolzovaniem-klyuchej-07-07',
+            'android': 'https://telegra.ph/Instrukciya-po-podklyucheniyu-k-OpenVPN-na-Android-s-ispolzovaniem-klyuchej-07-07',
+            'iphone': 'https://telegra.ph/Instrukciya-po-podklyucheniyu-k-OpenVPN-na-iOS-s-ispolzovaniem-klyuchej-07-07'
         },
         'vless': {
             'windows': 'https://telegra.ph/Vless-na-Windows-05-17',
@@ -188,13 +189,16 @@ class Keyboards:
     KEY = '🔐 Ключи к VPN'
     TRIAL = '🆓 Пробная подписка'
     RETURN = '🔙 Вернуться в меню'
+    RETURN_CALLBACK = 'main_menu'
     TWO_DEVICE = '2️⃣ 2 устройства'
     FOUR_DEVICE = '4️⃣ 4 устройства'
     ONE_MONTH = '1️⃣ 1 месяц'
     SIX_MONTH = '6️⃣ 6 месяцев'
     TWELVE_MONTH = '1️⃣2️⃣ 12 месяцев'
     VLESS = '➰ Vless'
+    VLESS_CALLBACK = 'vless'
     OVPN = '🧱 OpenVPN'
+    OVPN_CALLBACK = 'openvpn'
     EXTENSION = '⏭️ Продлеваем'
     UPDATE = '🔁 Обновляем'
     NEW = '🆕 Новая'

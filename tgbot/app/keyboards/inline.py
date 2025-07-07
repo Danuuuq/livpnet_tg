@@ -42,7 +42,7 @@ def subscription_inline_kb(trial: bool = False) -> InlineKeyboardMarkup:
                                   callback_data='get_trial')])
     inline_kb_list.append(
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')])
+                              callback_data=Keyboards.RETURN_CALLBACK)])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
@@ -60,7 +60,7 @@ def choice_subscription_inline_kb(subscriptions: dict) -> InlineKeyboardMarkup:
     ]
     inline_kb_list.append(
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')])
+                              callback_data=Keyboards.RETURN_CALLBACK)])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
@@ -78,7 +78,7 @@ def choice_type_inline_kb(trial: bool = False) -> InlineKeyboardMarkup:
                                   callback_data='get_trial')])
     inline_kb_list.append(
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')])
+                              callback_data=Keyboards.RETURN_CALLBACK)])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
@@ -92,7 +92,7 @@ def choice_duration_kb() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=Keyboards.TWELVE_MONTH,
                               callback_data=SubscriptionDuration.year_1)],
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')]
+                              callback_data=Keyboards.RETURN_CALLBACK)]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
@@ -111,7 +111,7 @@ def choice_location_kb(servers: Any | dict,
     ]
     inline_kb_list.append(
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')])
+                              callback_data=Keyboards.RETURN_CALLBACK)])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
@@ -128,7 +128,7 @@ def choice_protocol_kb(
     ]
     inline_kb_list.append(
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')])
+                              callback_data=Keyboards.RETURN_CALLBACK)])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
@@ -139,11 +139,11 @@ def payment_kb(url: str) -> InlineKeyboardMarkup:
     ]
     inline_kb_list.append(
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')])
+                              callback_data=Keyboards.RETURN_CALLBACK)])
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 def keys_inline_kb(
-    subscriptions: list[str] | None = None,
+    subscriptions: list[dict] | None = None,
 ) -> InlineKeyboardMarkup:
     """Инлайн клавиатура в ключах и информационных блоках."""
     inline_kb_list = []
@@ -153,8 +153,8 @@ def keys_inline_kb(
                 for idx, certificate in enumerate(sub["certificates"]):
                     inline_kb_list.append([
                         InlineKeyboardButton(
-                            text=(f'Сертификат {sub.get('region').get('name')} '
-                                  f'{sub.get('protocol')} №{idx + 1}'),
+                            text=(f'Сертификат {sub.get('region').get('name')}'
+                                  f' {sub.get('protocol')} №{idx + 1}'),
                             url=certificate
                         )
                     ])
@@ -162,16 +162,17 @@ def keys_inline_kb(
             [InlineKeyboardButton(text=Keyboards.HELP,
                                   callback_data='get_help')],
             [InlineKeyboardButton(text=Keyboards.RETURN,
-                                  callback_data='main_menu')]
+                                  callback_data=Keyboards.RETURN_CALLBACK)]
         ]
     else:
         inline_kb_list = [
             [InlineKeyboardButton(text=Keyboards.PAY,
                                   callback_data='pay_subscription')],
             [InlineKeyboardButton(text=Keyboards.RETURN,
-                                  callback_data='main_menu')]
+                                  callback_data=Keyboards.RETURN_CALLBACK)]
         ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
+
 
 def keys_referral_kb() -> InlineKeyboardMarkup:
     """Инлайн клавиатура в блоке с реферралами."""
@@ -181,20 +182,22 @@ def keys_referral_kb() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=Keyboards.SUPPORT,
                               url=Keyboards.URL_SUPPORT)],
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')]
+                              callback_data=Keyboards.RETURN_CALLBACK)]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 
 def protocol_inline_kb() -> InlineKeyboardMarkup:
-    """Инлайн клавиатура в ключах."""
+    """Инлайн клавиатура в инструкции с выбором протокола."""
     inline_kb_list = [
-        [InlineKeyboardButton(text=Keyboards.VLESS,
-                              callback_data='vless'),
-         InlineKeyboardButton(text=Keyboards.OVPN,
-                              callback_data='openvpn')],
+        [
+            # InlineKeyboardButton(text=Keyboards.VLESS,
+            #                      callback_data=Keyboards.VLESS_CALLBACK),
+            InlineKeyboardButton(text=Keyboards.OVPN,
+                                 callback_data=Keyboards.OVPN_CALLBACK)
+        ],
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')]
+                              callback_data=Keyboards.RETURN_CALLBACK)]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
@@ -209,7 +212,7 @@ def choice_sub_inline_kb() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=Keyboards.NEW,
                               callback_data='new_sub')],
         [InlineKeyboardButton(text=Keyboards.RETURN,
-                              callback_data='main_menu')]
+                              callback_data=Keyboards.RETURN_CALLBACK)]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
@@ -234,6 +237,6 @@ def device_inline_kb(protocol: str) -> InlineKeyboardMarkup:
             url=Keyboards.URL_SUPPORT)],
         [InlineKeyboardButton(
             text=Keyboards.RETURN,
-            callback_data='main_menu')]
+            callback_data=Keyboards.RETURN_CALLBACK)]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
