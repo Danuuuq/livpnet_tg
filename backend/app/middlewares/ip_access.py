@@ -21,6 +21,9 @@ class IPWhitelistMiddleware(BaseHTTPMiddleware):
                     action_name='Обращение к /subscription/yookassa',
                     message=f'Заблокирован доступ с ip-адреса: {ip_obj}, '
                 )
-                raise HTTPException(status_code=403, detail='Access denied')
+                raise HTTPException(
+                    status_code=403,
+                    detail=f'Заблокирован доступ с ip-адреса: {ip_obj}',
+                )
 
         return await call_next(request)

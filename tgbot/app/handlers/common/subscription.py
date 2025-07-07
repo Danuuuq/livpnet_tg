@@ -232,7 +232,7 @@ async def renew_sub(
 
 @router.callback_query(SubscriptionExtensionForm.type)
 async def type_renew_sub(call: CallbackQuery, state: FSMContext):
-    """CallBack запрос для выбора длительности, только продление."""
+    """CallBack запрос для выбора типа подписки, только продление."""
     await state.update_data(sub_id=call.data)
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         await call.message.delete()
@@ -243,12 +243,28 @@ async def type_renew_sub(call: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(SubscriptionExtensionForm.sub_id)
-async def extension_sub(call: CallbackQuery, state: FSMContext):
+async def extension_sub(
+    call: CallbackQuery,
+    state: FSMContext,
+    current_user: dict,
+):
     """CallBack запрос для выбора длительности, только продление."""
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
+        subs = current_user.get('subscription')
+        sub_check = next(
+            (sub for sub in subs if str(sub.get('id')) == call.data), None
+        )
         data = await state.get_data()
         if data.get('sub_id'):
             await state.update_data(type=call.data)
+        elif (data.get('type') is None and
+              (sub_check and sub_check.get('type') == 'Пробная')):
+            await state.update_data(sub_id=call.data)
+            await call.message.delete()
+            await call.message.answer(
+                CommonMessage.CHOICE_MSG_TYPE_SUB,
+                reply_markup=choice_type_inline_kb())
+            return await state.set_state(SubscriptionExtensionForm.sub_id)
         else:
             await state.update_data(sub_id=call.data)
         await call.message.delete()
