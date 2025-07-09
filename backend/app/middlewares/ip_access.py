@@ -25,5 +25,9 @@ class IPWhitelistMiddleware(BaseHTTPMiddleware):
                     status_code=403,
                     detail=f'Заблокирован доступ с ip-адреса: {ip_obj}',
                 )
+            log_action_status(
+                action_name='Обращение к /subscription/yookassa',
+                message=f'Разрешен доступ с ip-адреса: {ip_obj}, '
+            )
 
         return await call_next(request)
