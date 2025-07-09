@@ -83,6 +83,8 @@ services:
     build: ../nginx
     ports:
       - "8000:80"
+    volumes:
+      - ./logs/nginx:/var/log/nginx
     depends_on:
       - backend
     restart: unless-stopped

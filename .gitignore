@@ -130,6 +130,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
+*.backup
 help.txt
 .env.prod
 .env
