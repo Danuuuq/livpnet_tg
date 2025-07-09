@@ -13,6 +13,7 @@ allowed_networks = [
 class IPWhitelistMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         client_ip = request.client.host
+        client_ip = request.headers.get('X-Real-IP') or request.client.host
         ip_obj = ipaddress.ip_address(client_ip)
 
         if request.url.path.startswith('/subscription/yookassa'):
