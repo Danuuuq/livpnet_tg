@@ -1,2 +1,7 @@
 FROM nginx:alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Копируем основной nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Копируем server-конфиги (например, default.conf)
+COPY default.conf /etc/nginx/conf.d/default.conf
