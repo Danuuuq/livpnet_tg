@@ -12,9 +12,6 @@ allowed_networks = [
 
 class IPWhitelistMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        print("Client IP:", request.client.host)
-        print("X-Real-IP:", request.headers.get("X-Real-IP"))
-        print("X-Forwarded-For:", request.headers.get("X-Forwarded-For"))
         client_ip = request.headers.get('X-Real-IP') or request.client.host
         ip_obj = ipaddress.ip_address(client_ip)
 
