@@ -1,6 +1,6 @@
 class SettingFieldDB:
     DEFAULT_FOR_COUNT = 0
-    DEFAULT_MAX_CERT = 10
+    DEFAULT_MAX_CERT = 20
     DEFAULT_ACTIVE_SRV = False
     DEFAULT_ACTIVE_SUB = False
     DEFAULT_GIVEN_BONUS = False

@@ -104,6 +104,10 @@ class CRUDCertificate(CRUDBase):
         server = await server_crud.get_by_id(obj_in.server_id, session)
         if server:
             server.current_cert_count += 1
+            if server.max_certificates <= server.current_cert_count:
+                server.is_active = False
+            else:
+                server.is_active = True
             session.add(server)
         return await commit_change(session, db_obj)
 
@@ -116,6 +120,8 @@ class CRUDCertificate(CRUDBase):
         server = await server_crud.get_by_id(db_obj.server_id, session)
         if server and server.current_cert_count > 0:
             server.current_cert_count -= 1
+            if server.max_certificates > server.current_cert_count:
+                server.is_active = True
             session.add(server)
         await session.delete(db_obj)
         await commit_change(session)
