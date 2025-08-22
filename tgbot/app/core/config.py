@@ -1,3 +1,4 @@
+import os
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -26,9 +27,14 @@ class Settings(BaseSettings):
     RABBIT_PORT_AMQP: int
 
     model_config = SettingsConfigDict(
+        env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              '../../../infra', '.env'),
         env_file_encoding='utf-8',
-        extra='ignore',
-    )
+        extra='ignore')
+    # model_config = SettingsConfigDict(
+    #     env_file_encoding='utf-8',
+    #     extra='ignore',
+    # )
 
     @property
     def get_webhook_url(self) -> str:
@@ -47,7 +53,6 @@ class Settings(BaseSettings):
         return (f'amqp://{self.RABBITMQ_DEFAULT_USER}:'
                 f'{self.RABBITMQ_DEFAULT_PASS}@'
                 f'{self.RABBIT_HOST}:{self.RABBIT_PORT_AMQP}')
-
 
 
 try:

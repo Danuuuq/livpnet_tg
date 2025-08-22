@@ -36,6 +36,7 @@ async def create_payment(
 ) -> str:
     uuid_payment = uuid.uuid4()
     try:
+        # TODO: Добавить информацию про тип подписки
         payment = Payment.create({
             'amount': {
                 'value': value,

@@ -2,6 +2,7 @@
 
 # OpenVPN install script (fixed version)
 # Usage: ./openvpn-install-fixed.sh your.domain.com
+# Usage: ./openvpn-install-fixed.sh <your_ip_address>
 
 set -e
 
