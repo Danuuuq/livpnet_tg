@@ -1,4 +1,5 @@
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -30,12 +31,30 @@ async def callback_start(call: CallbackQuery, state: FSMContext,
     """Возвращение в главное меню."""
     await state.clear()
     subscriptions = current_user.get('subscription')
-    await call.message.delete()
-    await call.message.answer(
-        CommonMessage.format_start_message(
-            name=call.from_user.first_name,
-            main_menu=True,
-            subscriptions=subscriptions,
-        ),
-        reply_markup=main_inline_kb()
-    )
+    try:
+        await call.message.edit_text(
+            text=CommonMessage.format_start_message(
+                name=call.from_user.first_name,
+                main_menu=True,
+                subscriptions=subscriptions,
+            ),
+            reply_markup=main_inline_kb(),
+        )
+    except TelegramBadRequest:
+        await call.message.answer(
+            text=CommonMessage.format_start_message(
+                name=call.from_user.first_name,
+                main_menu=True,
+                subscriptions=subscriptions,
+            ),
+            reply_markup=main_inline_kb(),
+        )
+    # await call.message.delete()
+    # await call.message.answer(
+    #     CommonMessage.format_start_message(
+    #         name=call.from_user.first_name,
+    #         main_menu=True,
+    #         subscriptions=subscriptions,
+    #     ),
+    #     reply_markup=main_inline_kb()
+    # )

@@ -1,4 +1,5 @@
 from aiogram import Router, F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 from aiogram.utils.chat_action import ChatActionSender
@@ -37,20 +38,40 @@ async def pay_subscription(
     await call.answer(CommonMessage.LOAD_MSG_CHOICE_SUB, show_alert=False)
     if current_user.get('subscription'):
         async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-            await call.message.delete()
-            await call.message.answer(
-                CommonMessage.CHOICE_MSG_NEW_OR_OLD,
-                reply_markup=choice_sub_inline_kb())
+            try:
+                await call.message.edit_text(
+                    text=CommonMessage.CHOICE_MSG_NEW_OR_OLD,
+                    reply_markup=choice_sub_inline_kb(),
+                )
+            except TelegramBadRequest:
+                await call.message.answer(
+                    text=CommonMessage.CHOICE_MSG_NEW_OR_OLD,
+                    reply_markup=choice_sub_inline_kb(),
+                )
+            # await call.message.delete()
+            # await call.message.answer(
+            #     CommonMessage.CHOICE_MSG_NEW_OR_OLD,
+            #     reply_markup=choice_sub_inline_kb())
     else:
         async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
             url = settings.get_backend_url + settings.SERVER_PATH
             async with call.bot.http_client.get(url) as response:
                 servers = await response.json()
             await state.update_data(servers=servers)
-            await call.message.delete()
-            await call.message.answer(
-                CommonMessage.CHOICE_MSG_TYPE_SUB,
-                reply_markup=choice_type_inline_kb(trial=True))
+            try:
+                await call.message.edit_text(
+                    text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                    reply_markup=choice_type_inline_kb(trial=True),
+                )
+            except TelegramBadRequest:
+                await call.message.answer(
+                    text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                    reply_markup=choice_type_inline_kb(trial=True),
+                )
+            # await call.message.delete()
+            # await call.message.answer(
+            #     CommonMessage.CHOICE_MSG_TYPE_SUB,
+            #     reply_markup=choice_type_inline_kb(trial=True))
             await state.set_state(SubscriptionForm.type)
 
 
@@ -65,10 +86,20 @@ async def get_trial(call: CallbackQuery, state: FSMContext):
             servers = await response.json()
         await state.update_data(servers=servers)
         await state.update_data(type=SubscriptionType.trial)
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.CHOICE_MSG_LOCATION,
-            reply_markup=choice_location_kb(servers))
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.CHOICE_MSG_LOCATION,
+                reply_markup=choice_location_kb(servers),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.CHOICE_MSG_LOCATION,
+                reply_markup=choice_location_kb(servers),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.CHOICE_MSG_LOCATION,
+        #     reply_markup=choice_location_kb(servers))
     await state.set_state(SubscriptionForm.location)
 
 
@@ -80,10 +111,20 @@ async def choice_subscription(
 ):
     """CallBack запрос для выбора подписки, только обновление."""
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.MSG_FOR_UPDATE_SUB,
-            reply_markup=choice_subscription_inline_kb(current_user.get('subscription')))
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.MSG_FOR_UPDATE_SUB,
+                reply_markup=choice_subscription_inline_kb(current_user.get('subscription')),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.MSG_FOR_UPDATE_SUB,
+                reply_markup=choice_subscription_inline_kb(current_user.get('subscription')),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.MSG_FOR_UPDATE_SUB,
+        #     reply_markup=choice_subscription_inline_kb(current_user.get('subscription')))
     await state.set_state(SubscriptionForm.subscription)
 
 
@@ -98,10 +139,20 @@ async def new_subscription(
         async with call.bot.http_client.get(url) as response:
             servers = await response.json()
         await state.update_data(servers=servers)
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.CHOICE_MSG_TYPE_SUB,
-            reply_markup=choice_type_inline_kb(trial=False))
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                reply_markup=choice_type_inline_kb(trial=False),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                reply_markup=choice_type_inline_kb(trial=False),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.CHOICE_MSG_TYPE_SUB,
+        #     reply_markup=choice_type_inline_kb(trial=False))
     await state.set_state(SubscriptionForm.type)
 
 
@@ -114,10 +165,20 @@ async def choice_type(call: CallbackQuery, state: FSMContext):
         async with call.bot.http_client.get(url) as response:
             servers = await response.json()
         await state.update_data(servers=servers)
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.CHOICE_MSG_TYPE_SUB,
-            reply_markup=choice_type_inline_kb(trial=False))
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                reply_markup=choice_type_inline_kb(trial=False),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                reply_markup=choice_type_inline_kb(trial=False),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.CHOICE_MSG_TYPE_SUB,
+        #     reply_markup=choice_type_inline_kb(trial=False))
     await state.set_state(SubscriptionForm.type)
 
 
@@ -126,10 +187,20 @@ async def choice_duration(call: CallbackQuery, state: FSMContext):
     """CallBack запрос для выбора длительность, только покупка/обновление."""
     await state.update_data(type=call.data)
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.CHOICE_MSG_DURATION,
-            reply_markup=choice_duration_kb())
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.CHOICE_MSG_DURATION,
+                reply_markup=choice_duration_kb(),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.CHOICE_MSG_DURATION,
+                reply_markup=choice_duration_kb(),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.CHOICE_MSG_DURATION,
+        #     reply_markup=choice_duration_kb())
     await state.set_state(SubscriptionForm.duration)
 
 
@@ -140,10 +211,20 @@ async def choice_location(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     servers = data.get('servers')
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.CHOICE_MSG_LOCATION,
-            reply_markup=choice_location_kb(servers))
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.CHOICE_MSG_LOCATION,
+                reply_markup=choice_location_kb(servers),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.CHOICE_MSG_LOCATION,
+                reply_markup=choice_location_kb(servers),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.CHOICE_MSG_LOCATION,
+        #     reply_markup=choice_location_kb(servers))
     await state.set_state(SubscriptionForm.location)
 
 
@@ -154,10 +235,20 @@ async def choice_protocol(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     servers = data.get('servers')
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.CHOICE_MSG_PROTOCOL,
-            reply_markup=choice_protocol_kb(servers))
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.CHOICE_MSG_PROTOCOL,
+                reply_markup=choice_protocol_kb(servers),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.CHOICE_MSG_PROTOCOL,
+                reply_markup=choice_protocol_kb(servers),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.CHOICE_MSG_PROTOCOL,
+        #     reply_markup=choice_protocol_kb(servers))
     await state.set_state(SubscriptionForm.protocol)
 
 
@@ -196,15 +287,35 @@ async def create_subscription(call: CallbackQuery, state: FSMContext):
             f'До: <b>{end_date}</b>\n'
         )
         subs_info = '\n'.join(lines)
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
-            reply_markup=subscription_inline_kb())
-    else:
-            await call.message.delete()
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
+                reply_markup=subscription_inline_kb(),
+            )
+        except TelegramBadRequest:
             await call.message.answer(
-                CommonMessage.URL_FOR_PAY.format(**answer),
-                reply_markup=payment_kb(answer.get('url')))
+                text=CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
+                reply_markup=subscription_inline_kb(),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.SUBSCRIPTIONS_INFO.format(subscriptions=subs_info),
+        #     reply_markup=subscription_inline_kb())
+    else:
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.URL_FOR_PAY.format(**answer),
+                reply_markup=payment_kb(answer.get('url')),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.URL_FOR_PAY.format(**answer),
+                reply_markup=payment_kb(answer.get('url')),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.URL_FOR_PAY.format(**answer),
+        #     reply_markup=payment_kb(answer.get('url')))
     await state.clear()
 
 
@@ -217,12 +328,22 @@ async def renew_sub(
     """CallBack запрос для выбора подписки, только продление."""
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
         subscription = current_user.get('subscription')
-        await call.message.delete()
         if not subscription:
             await call.message.answer("У тебя нет активных подписок для продления.")
-        await call.message.answer(
-            CommonMessage.MSG_FOR_RENEW_SUB,
-            reply_markup=choice_subscription_inline_kb(subscription))
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.MSG_FOR_RENEW_SUB,
+                reply_markup=choice_subscription_inline_kb(subscription),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.MSG_FOR_RENEW_SUB,
+                reply_markup=choice_subscription_inline_kb(subscription),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.MSG_FOR_RENEW_SUB,
+        #     reply_markup=choice_subscription_inline_kb(subscription))
         if (len(subscription) == 1 and
             subscription[-1].get('type') == SubscriptionType.trial):
             await state.set_state(SubscriptionExtensionForm.type)
@@ -235,10 +356,20 @@ async def type_renew_sub(call: CallbackQuery, state: FSMContext):
     """CallBack запрос для выбора типа подписки, только продление."""
     await state.update_data(sub_id=call.data)
     async with ChatActionSender.typing(bot=bot, chat_id=call.message.chat.id):
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.CHOICE_MSG_TYPE_SUB,
-            reply_markup=choice_type_inline_kb())
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                reply_markup=choice_type_inline_kb(),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                reply_markup=choice_type_inline_kb(),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.CHOICE_MSG_TYPE_SUB,
+        #     reply_markup=choice_type_inline_kb())
     await state.set_state(SubscriptionExtensionForm.sub_id)
 
 
@@ -260,17 +391,37 @@ async def extension_sub(
         elif (data.get('type') is None and
               (sub_check and sub_check.get('type') == 'Пробная')):
             await state.update_data(sub_id=call.data)
-            await call.message.delete()
-            await call.message.answer(
-                CommonMessage.CHOICE_MSG_TYPE_SUB,
-                reply_markup=choice_type_inline_kb())
-            return await state.set_state(SubscriptionExtensionForm.sub_id)
+            try:
+                await call.message.edit_text(
+                    text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                    reply_markup=choice_type_inline_kb(),
+                )
+            except TelegramBadRequest:
+                await call.message.answer(
+                    text=CommonMessage.CHOICE_MSG_TYPE_SUB,
+                    reply_markup=choice_type_inline_kb(),
+                )
+            # await call.message.delete()
+            # await call.message.answer(
+            #     CommonMessage.CHOICE_MSG_TYPE_SUB,
+            #     reply_markup=choice_type_inline_kb())
+            # return await state.set_state(SubscriptionExtensionForm.sub_id)
         else:
             await state.update_data(sub_id=call.data)
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.CHOICE_MSG_DURATION,
-            reply_markup=choice_duration_kb())
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.CHOICE_MSG_DURATION,
+                reply_markup=choice_duration_kb(),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.CHOICE_MSG_DURATION,
+                reply_markup=choice_duration_kb(),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.CHOICE_MSG_DURATION,
+        #     reply_markup=choice_duration_kb())
     await state.set_state(SubscriptionExtensionForm.extension)
 
 
@@ -294,8 +445,18 @@ async def extension_subscription(call: CallbackQuery, state: FSMContext):
                 await call.message.answer('Ошибка оформления подписки')
                 return
             answer = await response.json()
-        await call.message.delete()
-        await call.message.answer(
-            CommonMessage.URL_FOR_PAY_RENEW.format(**answer),
-            reply_markup=payment_kb(answer.get('url')))
+        try:
+            await call.message.edit_text(
+                text=CommonMessage.URL_FOR_PAY_RENEW.format(**answer),
+                reply_markup=payment_kb(answer.get('url')),
+            )
+        except TelegramBadRequest:
+            await call.message.answer(
+                text=CommonMessage.URL_FOR_PAY_RENEW.format(**answer),
+                reply_markup=payment_kb(answer.get('url')),
+            )
+        # await call.message.delete()
+        # await call.message.answer(
+        #     CommonMessage.URL_FOR_PAY_RENEW.format(**answer),
+        #     reply_markup=payment_kb(answer.get('url')))
     await state.clear()
